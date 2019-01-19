@@ -61,7 +61,7 @@ func (l *Lexer) NextToken() token.Token {
 			tokenType := token.LookupKeyword(tokenLiteral)
 			return token.Token{Type: tokenType, Literal: tokenLiteral}
 		}
-		tok = newToken(token.INT, l.currentChar)
+		tok = newToken(token.ILLEGAL, l.currentChar)
 	}
 	l.readChar()
 	return tok
