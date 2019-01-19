@@ -10,6 +10,7 @@ func TestNextToken(t *testing.T) {
 		let a_b = 5 + 10;
 		!/*%^
 		1 == 3
+		0 != 9
 	`
 	expected := []struct {
 		expectedType    token.TokenType
@@ -30,6 +31,9 @@ func TestNextToken(t *testing.T) {
 		{token.INT, "1"},
 		{token.EQ, "=="},
 		{token.INT, "3"},
+		{token.INT, "0"},
+		{token.NOT_EQ, "!="},
+		{token.INT, "9"},
 		{token.EOF, ""},
 	}
 

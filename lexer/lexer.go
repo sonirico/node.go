@@ -58,7 +58,14 @@ func (l *Lexer) NextToken() token.Token {
 		break
 	// Operators
 	case '!':
-		tok = newToken(token.BANG, l.currentChar)
+		if l.peekChar() == '=' {
+			ch := l.currentChar
+			l.readChar()
+			tok.Type = token.NOT_EQ
+			tok.Literal = string(ch) + string(l.currentChar)
+		} else {
+			tok = newToken(token.BANG, l.currentChar)
+		}
 		break
 	case '/':
 		tok = newToken(token.SLASH, l.currentChar)
