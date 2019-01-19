@@ -17,6 +17,7 @@ const (
 	EQ = "=="
 	BANG = "!"
 	SLASH = "/"
+	ASTERISK = "*"
 
 	//
 	ASSIGNMENT = "="

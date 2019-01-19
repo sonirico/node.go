@@ -69,6 +69,9 @@ func (l *Lexer) NextToken() token.Token {
 	case '-':
 		tok = newToken(token.MINUS, l.currentChar)
 		break
+	case '*':
+		tok = newToken(token.ASTERISK, l.currentChar)
+		break
 	case '=':
 		{
 			ch := l.currentChar
