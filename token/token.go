@@ -19,6 +19,7 @@ const (
 	SLASH = "/"
 	ASTERISK = "*"
 	PERCENT = "%"
+	POWER = "^"
 
 	//
 	ASSIGNMENT = "="

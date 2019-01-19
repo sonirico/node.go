@@ -75,6 +75,9 @@ func (l *Lexer) NextToken() token.Token {
 	case '%':
 		tok = newToken(token.PERCENT, l.currentChar)
 		break
+	case '^':
+		tok = newToken(token.POWER, l.currentChar)
+		break
 	case '=':
 		{
 			ch := l.currentChar
