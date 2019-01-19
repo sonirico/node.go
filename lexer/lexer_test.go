@@ -7,7 +7,7 @@ import (
 
 func TestNextToken(t *testing.T) {
 	input := `
-		let a_b 5 + 1
+		let a_b = 5 + 1
 	`
 	expected := []struct {
 		expectedType    token.TokenType
@@ -15,6 +15,7 @@ func TestNextToken(t *testing.T) {
 	}{
 		{token.LET, "let"},
 		{token.IDENTIFIER, "a_b"},
+		{token.ASSIGNMENT, "="},
 		{token.INT, "5"},
 		{token.PLUS, "+"},
 		{token.INT, "1"},

@@ -49,6 +49,9 @@ func (l *Lexer) NextToken() token.Token {
 	case '-':
 		tok = newToken(token.MINUS, l.currentChar)
 		break
+	case '=':
+		tok = newToken(token.ASSIGNMENT, l.currentChar)
+		break
 	default:
 		if isDigit(l.currentChar) {
 			return token.Token{Type: token.INT, Literal: l.readNumber()}
