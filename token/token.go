@@ -16,6 +16,7 @@ const (
 	MINUS = "-"
 	EQ = "=="
 	BANG = "!"
+	SLASH = "/"
 
 	//
 	ASSIGNMENT = "="

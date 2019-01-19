@@ -60,6 +60,9 @@ func (l *Lexer) NextToken() token.Token {
 	case '!':
 		tok = newToken(token.BANG, l.currentChar)
 		break
+	case '/':
+		tok = newToken(token.SLASH, l.currentChar)
+		break
 	case '+':
 		tok = newToken(token.PLUS, l.currentChar)
 		break
