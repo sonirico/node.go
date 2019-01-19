@@ -14,6 +14,7 @@ const (
 	// operators
 	PLUS = "+"
 	MINUS = "-"
+	EQ = "=="
 
 	//
 	ASSIGNMENT = "="

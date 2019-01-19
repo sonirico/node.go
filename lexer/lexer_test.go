@@ -7,7 +7,9 @@ import (
 
 func TestNextToken(t *testing.T) {
 	input := `
-		let a_b = 5 + 1
+		let a_b = 5 + 10;
+		!/*%^
+		1 == 3
 	`
 	expected := []struct {
 		expectedType    token.TokenType
@@ -18,7 +20,17 @@ func TestNextToken(t *testing.T) {
 		{token.ASSIGNMENT, "="},
 		{token.INT, "5"},
 		{token.PLUS, "+"},
+		{token.INT, "10"},
+		{token.SEMICOLON, ";"},
+		{token.BANG, "!"},
+		{token.SLASH, "/"},
+		{token.ASTERISK, "*"},
+		{token.PERCENT, "%"},
+		{token.POWER, "^"},
 		{token.INT, "1"},
+		{token.EQ, "=="},
+		{token.INT, "3"},
+		{token.EOF, ""},
 	}
 
 	lexer := New(input)
