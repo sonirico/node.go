@@ -48,10 +48,17 @@ func (l *Lexer) peekChar() byte {
 
 func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
+
 	l.consumeWhitespace()
+
 	switch l.currentChar {
+	// Delimiters
 	case ';':
 		tok = newToken(token.SEMICOLON, l.currentChar)
+		break
+	// Operators
+	case '!':
+		tok = newToken(token.BANG, l.currentChar)
 		break
 	case '+':
 		tok = newToken(token.PLUS, l.currentChar)

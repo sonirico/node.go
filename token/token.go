@@ -15,6 +15,7 @@ const (
 	PLUS = "+"
 	MINUS = "-"
 	EQ = "=="
+	BANG = "!"
 
 	//
 	ASSIGNMENT = "="
