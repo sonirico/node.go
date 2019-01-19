@@ -26,6 +26,9 @@ const (
 	FUNC = "function"
 	IF = "if"
 	ELSE = "else"
+
+	// Delimiters
+	SEMICOLON = ";"
 )
 
 type TokenType string

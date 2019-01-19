@@ -29,7 +29,7 @@ func New(code string) *Lexer {
 }
 
 func (l *Lexer) readChar() {
-	if l.currentPosition >= l.inputLength {
+	if l.nextPosition >= l.inputLength {
 		l.currentChar = 0
 	} else {
 		l.currentChar = l.input[l.nextPosition]
@@ -50,6 +50,9 @@ func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
 	l.consumeWhitespace()
 	switch l.currentChar {
+	case ';':
+		tok = newToken(token.SEMICOLON, l.currentChar)
+		break
 	case '+':
 		tok = newToken(token.PLUS, l.currentChar)
 		break
@@ -57,19 +60,27 @@ func (l *Lexer) NextToken() token.Token {
 		tok = newToken(token.MINUS, l.currentChar)
 		break
 	case '=':
-		switch l.peekChar() {
-		case '=':
-			l.readChar()
-			return token.Token{Type: token.EQ, Literal: "=="}
-		default:
-			tok = newToken(token.ASSIGNMENT, l.currentChar)
+		{
+			ch := l.currentChar
+			switch l.peekChar() {
+			case '=':
+				l.readChar()
+				tok.Type = token.EQ
+				tok.Literal = string(ch) + string(l.currentChar)
+				break
+			default:
+				tok = newToken(token.ASSIGNMENT, l.currentChar)
+			}
 		}
+		break
+	case 0:
+		tok.Literal = ""
+		tok.Type = token.EOF
 		break
 	default:
 		if isDigit(l.currentChar) {
 			return token.Token{Type: token.INT, Literal: l.readNumber()}
-		}
-		if isLetter(l.currentChar) {
+		} else if isLetter(l.currentChar) {
 			tokenLiteral := l.readWord()
 			tokenType := token.LookupKeyword(tokenLiteral)
 			return token.Token{Type: tokenType, Literal: tokenLiteral}

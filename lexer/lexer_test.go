@@ -36,7 +36,7 @@ func TestNextToken(t *testing.T) {
 	lexer := New(input)
 
 	for _, expectedToken := range expected {
-		var actualToken = lexer.NextToken()
+		actualToken := lexer.NextToken()
 		if expectedToken.expectedType != actualToken.Type {
 			t.Fatalf("Expected TokenType to be %q, got %q", expectedToken.expectedType, actualToken.Type)
 		}
