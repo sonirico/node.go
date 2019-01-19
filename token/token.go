@@ -18,6 +18,7 @@ const (
 	BANG = "!"
 	SLASH = "/"
 	ASTERISK = "*"
+	PERCENT = "%"
 
 	//
 	ASSIGNMENT = "="
