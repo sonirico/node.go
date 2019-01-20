@@ -57,28 +57,30 @@ func (l *Lexer) NextToken() token.Token {
 		tok = newToken(token.SEMICOLON, l.currentChar)
 		break
 	// Operators
-	case '<': {
-		if l.peekChar() == '=' {
-			ch := l.currentChar
-			l.readChar()
-			tok.Type = token.LTE
-			tok.Literal = string(ch) + string(l.currentChar)
-		} else {
-			tok = newToken(token.LT, l.currentChar)
+	case '<':
+		{
+			if l.peekChar() == '=' {
+				ch := l.currentChar
+				l.readChar()
+				tok.Type = token.LTE
+				tok.Literal = string(ch) + string(l.currentChar)
+			} else {
+				tok = newToken(token.LT, l.currentChar)
+			}
+			break
 		}
-		break
-	}
-	case '>': {
-		if l.peekChar() == '=' {
-			ch := l.currentChar
-			l.readChar()
-			tok.Type = token.GTE
-			tok.Literal = string(ch) + string(l.currentChar)
-		} else {
-			tok = newToken(token.GT, l.currentChar)
+	case '>':
+		{
+			if l.peekChar() == '=' {
+				ch := l.currentChar
+				l.readChar()
+				tok.Type = token.GTE
+				tok.Literal = string(ch) + string(l.currentChar)
+			} else {
+				tok = newToken(token.GT, l.currentChar)
+			}
+			break
 		}
-		break
-	}
 	case '!':
 		if l.peekChar() == '=' {
 			ch := l.currentChar
