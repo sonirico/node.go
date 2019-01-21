@@ -93,9 +93,9 @@ func TestReturnStatement(t *testing.T) {
 		if !ok {
 			t.Fatalf("stmt is not an *ast.ReturnStatement. Got '%q' instead", returnStmt)
 		}
-		if returnStmt.Literal() != "return" {
+		if returnStmt.TokenLiteral() != "return" {
 			t.Fatalf("returnStatment.TokenLiteral is not 'return'. Got '%s' instead",
-				returnStmt.Literal())
+				returnStmt.TokenLiteral())
 		}
 	}
 }
