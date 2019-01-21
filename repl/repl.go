@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"node.go/lexer"
-	"node.go/token"
+	"node.go/parser"
 )
 
 const PROMPT = "\n/> "
@@ -19,12 +19,16 @@ func Start(in io.Reader, out io.Writer) {
 
 		line := scanner.Text()
 		lex := lexer.New(line)
-		mustQuit := false
+		par := parser.New(lex)
+		program := par.ParseProgram()
 
-		for !mustQuit {
-			t := lex.NextToken()
-			io.WriteString(out, fmt.Sprintln(t))
-			mustQuit = t.Type == token.EOF
+		if len(par.Errors()) > 0 {
+			for _, errorMessage := range par.Errors() {
+				io.WriteString(out, errorMessage)
+			}
+			continue
 		}
+
+		io.WriteString(out, fmt.Sprintf("Program has %d statement nodes", len(program.Statements)))
 	}
 }

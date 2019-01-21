@@ -6,6 +6,18 @@ import (
 	"testing"
 )
 
+func checkParserErrors(t *testing.T, p *Parser) {
+	if len(p.Errors()) < 1 {
+		return
+	}
+
+	for _, errorMessage := range p.Errors() {
+		t.Errorf("Parser error: %s", errorMessage)
+	}
+
+	t.FailNow()
+}
+
 // LET testing
 func testLetStatement(t *testing.T, actualStmt ast.Statement, expectedIdentName string) bool {
 	if actualStmt.Literal() != "let" {
@@ -36,8 +48,9 @@ func TestLetStatements(t *testing.T) {
 	`
 	lex := lexer.New(code)
 	par := New(lex)
-
 	program := par.ParseProgram()
+	checkParserErrors(t, par)
+
 	if program == nil {
 		t.Fatalf("ParseProgram returned nil")
 	}
