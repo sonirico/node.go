@@ -69,3 +69,31 @@ func TestLetStatements(t *testing.T) {
 		testLetStatement(t, stmt, expectedIdentifier.Name)
 	}
 }
+
+func TestReturnStatement(t *testing.T) {
+	code := `
+		return 1;
+		return 3 * 4;
+		return function (x) {x};
+	`
+	lex := lexer.New(code)
+	par := New(lex)
+	prog := par.ParseProgram()
+	checkParserErrors(t, par)
+	if prog == nil {
+		t.Fatalf("ParseProgram returned nil")
+	}
+	if len(prog.Statements) != 3 {
+		t.Fatalf("Expected 'ReturnStatements': 3. Got %d", len(prog.Statements))
+	}
+	for _, stmt := range prog.Statements {
+		returnStmt, ok := stmt.(*ast.ReturnStatement)
+		if !ok {
+			t.Fatalf("stmt is not an *ast.ReturnStatement. Got '%q' instead", returnStmt)
+		}
+		if returnStmt.Literal() != "return" {
+			t.Fatalf("returnStatment.TokenLiteral is not 'return'. Got '%s' instead",
+				returnStmt.Literal())
+		}
+	}
+}

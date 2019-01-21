@@ -16,10 +16,10 @@ const (
 	MINUS    = "-"
 	EQ       = "=="
 	NOT_EQ   = "!="
-	GT		 = ">"
-	LT	 	 = "<"
-	GTE		 = ">="
-	LTE		 = "<="
+	GT       = ">"
+	LT       = "<"
+	GTE      = ">="
+	LTE      = "<="
 	BANG     = "!"
 	SLASH    = "/"
 	ASTERISK = "*"
@@ -30,12 +30,13 @@ const (
 	ASSIGNMENT = "="
 
 	// keywords
-	VAR   = "var"
-	CONST = "const"
-	LET   = "let"
-	FUNC  = "function"
-	IF    = "if"
-	ELSE  = "else"
+	VAR    = "var"
+	CONST  = "const"
+	LET    = "let"
+	FUNC   = "function"
+	IF     = "if"
+	ELSE   = "else"
+	RETURN = "return"
 
 	// Delimiters
 	SEMICOLON = ";"
@@ -51,6 +52,7 @@ var keywords = map[string]TokenType{
 	"var":      VAR,
 	"if":       IF,
 	"else":     ELSE,
+	"return":   RETURN,
 }
 
 func LookupKeyword(literal string) TokenType {
