@@ -20,8 +20,8 @@ func checkParserErrors(t *testing.T, p *Parser) {
 
 // LET testing
 func testLetStatement(t *testing.T, actualStmt ast.Statement, expectedIdentName string) bool {
-	if actualStmt.Literal() != "let" {
-		t.Errorf("stmt.Literal wasn't 'let'. Got %q", actualStmt.Literal())
+	if actualStmt.TokenLiteral() != "let" {
+		t.Errorf("stmt.TokenLiteral wasn't 'let'. Got %q", actualStmt.TokenLiteral())
 		return false
 	}
 	letStmt, ok := actualStmt.(*ast.LetStatement)
@@ -30,11 +30,13 @@ func testLetStatement(t *testing.T, actualStmt ast.Statement, expectedIdentName 
 		return false
 	}
 	if letStmt.Name.Value != expectedIdentName {
-		t.Errorf("LetStmt.Name.Value wasn't '%s'. Got '%s'", expectedIdentName, letStmt.Name.Value)
+		t.Errorf("LetStmt.Name.Value wasn't '%s'. Got '%s'",
+			expectedIdentName, letStmt.Name.Value)
 		return false
 	}
-	if letStmt.Name.Literal() != expectedIdentName {
-		t.Errorf("LetStmt.Name.Literal wasn't '%s'. Got '%s'", expectedIdentName, letStmt.Name.Literal())
+	if letStmt.Name.TokenLiteral() != expectedIdentName {
+		t.Errorf("LetStmt.Name.TokenLiteral wasn't '%s'. Got '%s'",
+			expectedIdentName, letStmt.Name.TokenLiteral())
 		return false
 	}
 	return true

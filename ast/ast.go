@@ -3,7 +3,7 @@ package ast
 import "node.go/token"
 
 type Node interface {
-	Literal() string
+	TokenLiteral() string // Token literal value
 }
 
 type Statement interface {
@@ -27,7 +27,7 @@ type LetStatement struct {
 }
 
 func (l *LetStatement) statementNode() {}
-func (l *LetStatement) Literal() string {
+func (l *LetStatement) TokenLiteral() string {
 	return l.Token.Literal
 }
 
@@ -49,7 +49,7 @@ type Identifier struct {
 }
 
 func (i *Identifier) expressionNode() {}
-func (i *Identifier) Literal() string {
+func (i *Identifier) TokenLiteral() string {
 	return i.Value
 }
 
@@ -57,9 +57,9 @@ type Program struct {
 	Statements []Statement
 }
 
-func (p *Program) Literal() string {
+func (p *Program) TokenLiteral() string {
 	if len(p.Statements) > 0 {
-		return p.Statements[0].Literal()
+		return p.Statements[0].TokenLiteral()
 	} else {
 		return ""
 	}
