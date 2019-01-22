@@ -129,3 +129,33 @@ func TestIdentifierExpression(t *testing.T) {
 			identifier.TokenLiteral())
 	}
 }
+
+func TestIntegerLiteralExpression(t *testing.T) {
+	code := "2;"
+	lex := lexer.New(code)
+	par := New(lex)
+	program := par.ParseProgram()
+	checkParserErrors(t, par)
+	if program == nil {
+		t.Fatalf("ParseProgram returned nil")
+	}
+	if len(program.Statements) != 1 {
+		t.Fatalf("Got and unexpected number of statements: %d': 1. Expected %d",
+			len(program.Statements), 1)
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt is not *ast.ExpressionStatement. Got '%q' instead.", stmt)
+	}
+	integerLiteralExp, ok := stmt.Expression.(*ast.IntegerLiteral)
+	if !ok {
+		t.Fatalf("stmt is not *ast.IntegerLiteral. Got '%q' instead.", integerLiteralExp)
+	}
+	if integerLiteralExp.Value != 2 {
+		t.Errorf("IntegerLiteral.Value is not %d. Got %s", 2, integerLiteralExp)
+	}
+	if integerLiteralExp.TokenLiteral() != "2" {
+		t.Fatalf("IntegerLiteral.TokenLiteral is not '2'. Got '%s' instead",
+			integerLiteralExp.TokenLiteral())
+	}
+}

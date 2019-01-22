@@ -5,6 +5,7 @@ import (
 	"node.go/ast"
 	"node.go/lexer"
 	"node.go/token"
+	"strconv"
 )
 
 // Precedence priorities
@@ -48,7 +49,12 @@ func New(lexer *lexer.Lexer) *Parser {
 	parser.prefixParserFunctions = make(map[token.TokenType]PrefixParserFunc)
 	parser.infixParserFunctions = make(map[token.TokenType]InfixParserFunc)
 
+	// Prefix parsers
 	parser.registerPrefixFunction(token.IDENTIFIER, parser.parseIdentifierExpression)
+	parser.registerPrefixFunction(token.INT, parser.parserIntegerLiteral)
+
+	// Infix parsers
+	parser.registerInfixFunction(token.INT, parser.parserIntegerLiteral)
 
 	return parser
 }
@@ -73,6 +79,10 @@ func (p *Parser) peekTokenIs(tokenType token.TokenType) bool {
 func (p *Parser) peekError(tokenType token.TokenType) {
 	msg := fmt.Sprintf("Expected next token to be of type '%s'. Got '%s' -> %s",
 		tokenType, p.peekToken.Type, p.peekToken.Literal)
+	p.addError(msg)
+}
+
+func (p *Parser) addError(msg string) {
 	p.errors = append(p.errors, msg)
 }
 
@@ -167,11 +177,30 @@ func (p *Parser) parseIdentifierExpression() ast.Expression {
 	return &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
 }
 
+func (p *Parser) parserIntegerLiteral() ast.Expression {
+	il := &ast.IntegerLiteral{Token: p.currentToken}
+
+	base := 10
+	value, err := strconv.ParseInt(p.currentToken.Literal, base, 64)
+
+	if err != nil {
+		msg := fmt.Sprintf("unable to parse '%s' as integer", p.currentToken.Literal)
+		p.addError(msg)
+		return nil
+	}
+
+	il.Value = value
+
+	return il
+}
+
 func (p *Parser) parseExpression(precedence int) ast.Expression {
-	// mmm...
-	prefixParserFunction := p.prefixParserFunctions[p.currentToken.Type]
+	tokenType := p.currentToken.Type
+	prefixParserFunction := p.prefixParserFunctions[tokenType]
 
 	if prefixParserFunction == nil {
+		msg := fmt.Sprintf("there is not registered prefix parser function for token type %q", tokenType)
+		p.addError(msg)
 		return nil
 	}
 
