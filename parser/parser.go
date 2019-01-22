@@ -7,6 +7,23 @@ import (
 	"node.go/token"
 )
 
+// Precedence priorities
+const (
+	_ int = iota
+	LOWEST
+	EQUALS  // ==
+	SUM     // + and -
+	PRODUCT // * and /
+	POWER   // ^
+	PREFIX  // ! and - E.g: !true, -2
+	CALL    // add(1, 2)
+)
+
+type (
+	PrefixParserFunc func() ast.Expression
+	InfixParserFunc  func() ast.Expression
+)
+
 type Parser struct {
 	lexer *lexer.Lexer
 
@@ -14,6 +31,9 @@ type Parser struct {
 
 	currentToken token.Token
 	peekToken    token.Token
+
+	prefixParserFunctions map[token.TokenType]PrefixParserFunc
+	infixParserFunctions  map[token.TokenType]InfixParserFunc
 }
 
 func New(lexer *lexer.Lexer) *Parser {
@@ -24,6 +44,11 @@ func New(lexer *lexer.Lexer) *Parser {
 	// Read to token so as to have initialised both currentToken and peekToken
 	parser.nextToken()
 	parser.nextToken()
+
+	parser.prefixParserFunctions = make(map[token.TokenType]PrefixParserFunc)
+	parser.infixParserFunctions = make(map[token.TokenType]InfixParserFunc)
+
+	parser.registerPrefixFunction(token.IDENTIFIER, parser.parseIdentifierExpression)
 
 	return parser
 }
@@ -46,8 +71,8 @@ func (p *Parser) peekTokenIs(tokenType token.TokenType) bool {
 }
 
 func (p *Parser) peekError(tokenType token.TokenType) {
-	msg := fmt.Sprintf("Expected next token to be '%s'. Got '%s'",
-		tokenType, p.peekToken.Type)
+	msg := fmt.Sprintf("Expected next token to be of type '%s'. Got '%s' -> %s",
+		tokenType, p.peekToken.Type, p.peekToken.Literal)
 	p.errors = append(p.errors, msg)
 }
 
@@ -59,6 +84,14 @@ func (p *Parser) expectPeekToken(tokenType token.TokenType) bool {
 		p.peekError(tokenType)
 		return false
 	}
+}
+
+func (p *Parser) registerPrefixFunction(tokenType token.TokenType, fn PrefixParserFunc) {
+	p.prefixParserFunctions[tokenType] = fn
+}
+
+func (p *Parser) registerInfixFunction(tokenType token.TokenType, fn InfixParserFunc) {
+	p.infixParserFunctions[tokenType] = fn
 }
 
 func (p *Parser) parseLetStatement() *ast.LetStatement {
@@ -102,6 +135,23 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	return stmt
 }
 
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{Token: p.currentToken}
+
+	// 1 + 1; <-- This is and espression statement. Produces a value!
+	// 1 + 1 <-- This is also a valid expression. Rather handy to skip the semicolon in the repl!
+
+	// There is no other way but descending recursively into the ast tree...
+	stmt.Expression = p.parseExpression(LOWEST)
+
+	// Make the semicolon token optional
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.currentToken.Type {
 	case token.LET:
@@ -109,8 +159,25 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:
+		return p.parseExpressionStatement()
+	}
+}
+
+func (p *Parser) parseIdentifierExpression() ast.Expression {
+	return &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
+}
+
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	// mmm...
+	prefixParserFunction := p.prefixParserFunctions[p.currentToken.Type]
+
+	if prefixParserFunction == nil {
 		return nil
 	}
+
+	leftExpression := prefixParserFunction()
+
+	return leftExpression
 }
 
 func (p *Parser) ParseProgram() *ast.Program {

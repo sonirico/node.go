@@ -91,11 +91,41 @@ func TestReturnStatement(t *testing.T) {
 	for _, stmt := range prog.Statements {
 		returnStmt, ok := stmt.(*ast.ReturnStatement)
 		if !ok {
-			t.Fatalf("stmt is not an *ast.ReturnStatement. Got '%q' instead", returnStmt)
+			t.Fatalf("stmt is not an *ast.ReturnStatement. Got '%q' instead", stmt)
 		}
 		if returnStmt.TokenLiteral() != "return" {
 			t.Fatalf("returnStatment.TokenLiteral is not 'return'. Got '%s' instead",
 				returnStmt.TokenLiteral())
 		}
+	}
+}
+
+func TestIdentifierExpression(t *testing.T) {
+	input := "fizzbuzz;"
+	lex := lexer.New(input)
+	par := New(lex)
+	prog := par.ParseProgram()
+	checkParserErrors(t, par)
+	if prog == nil {
+		t.Fatalf("ParseProgram returned nil")
+	}
+	if len(prog.Statements) != 1 {
+		t.Fatalf("Expected 'Identifiers': 1. Got %d", len(prog.Statements))
+	}
+	stmt := prog.Statements[0]
+	expressionStmt, ok := stmt.(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt is not *ast.ExpressionStatement. Got '%q' instead.", stmt)
+	}
+	identifier, ok := expressionStmt.Expression.(*ast.Identifier)
+	if !ok {
+		t.Fatalf("stmt is not *ast.Identifier. Got '%q' instead.", expressionStmt)
+	}
+	if identifier.Value != "fizzbuzz" {
+		t.Errorf("identifier.Value is not %s. Got %s", "fizzbuzz", identifier.Value)
+	}
+	if identifier.TokenLiteral() != "fizzbuzz" {
+		t.Fatalf("expressionStmt.TokenLiteral is not 'fizzbuzz'. Got '%s' instead",
+			identifier.TokenLiteral())
 	}
 }

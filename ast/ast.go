@@ -24,6 +24,7 @@ type Expression interface {
 	expressionNode()
 }
 
+// LET statement
 type LetStatement struct {
 	Token token.Token
 
@@ -79,6 +80,25 @@ func (rs *ReturnStatement) String() string {
 	return buffer.String()
 }
 
+// STATEMENT expression
+type ExpressionStatement struct {
+	Token token.Token
+
+	Expression Expression
+}
+
+func (es *ExpressionStatement) statementNode() {}
+func (es *ExpressionStatement) TokenLiteral() string {
+	return es.Token.Literal
+}
+func (es *ExpressionStatement) String() string {
+	if es.Expression != nil {
+		return es.Expression.String()
+	}
+	return ""
+}
+
+// IDENTIFIER expression
 type Identifier struct {
 	Token token.Token
 	Value string
