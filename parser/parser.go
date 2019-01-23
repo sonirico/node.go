@@ -51,10 +51,12 @@ func New(lexer *lexer.Lexer) *Parser {
 
 	// Prefix parsers
 	parser.registerPrefixFunction(token.IDENTIFIER, parser.parseIdentifierExpression)
-	parser.registerPrefixFunction(token.INT, parser.parserIntegerLiteral)
+	parser.registerPrefixFunction(token.INT, parser.parseIntegerLiteral)
+	parser.registerPrefixFunction(token.BANG, parser.parsePrefixExpression)
+	parser.registerPrefixFunction(token.MINUS, parser.parsePrefixExpression)
 
 	// Infix parsers
-	parser.registerInfixFunction(token.INT, parser.parserIntegerLiteral)
+	parser.registerInfixFunction(token.INT, parser.parseIntegerLiteral)
 
 	return parser
 }
@@ -148,7 +150,7 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	stmt := &ast.ExpressionStatement{Token: p.currentToken}
 
-	// 1 + 1; <-- This is and espression statement. Produces a value!
+	// 1 + 1; <-- This is and expression statement. Produces a value!
 	// 1 + 1 <-- This is also a valid expression. Rather handy to skip the semicolon in the repl!
 
 	// There is no other way but descending recursively into the ast tree...
@@ -160,6 +162,19 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	}
 
 	return stmt
+}
+
+func (p *Parser) parsePrefixExpression() ast.Expression {
+	expr := &ast.PrefixExpression{
+		Token:    p.currentToken,
+		Operator: p.currentToken.Literal,
+	}
+
+	p.nextToken()
+
+	expr.Right = p.parseExpression(PREFIX)
+
+	return expr
 }
 
 func (p *Parser) parseStatement() ast.Statement {
@@ -177,7 +192,7 @@ func (p *Parser) parseIdentifierExpression() ast.Expression {
 	return &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
 }
 
-func (p *Parser) parserIntegerLiteral() ast.Expression {
+func (p *Parser) parseIntegerLiteral() ast.Expression {
 	il := &ast.IntegerLiteral{Token: p.currentToken}
 
 	base := 10

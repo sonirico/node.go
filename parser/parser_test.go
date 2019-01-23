@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"node.go/ast"
 	"node.go/lexer"
 	"testing"
@@ -16,6 +17,21 @@ func checkParserErrors(t *testing.T, p *Parser) {
 	}
 
 	t.FailNow()
+}
+
+// INTEGER literal testing
+func testIntegerLiteralExpression(t *testing.T, e ast.Expression, expectedValue int64) {
+	integerLiteralExp, ok := e.(*ast.IntegerLiteral)
+	if !ok {
+		t.Fatalf("stmt is not *ast.IntegerLiteral. Got '%q' instead.", integerLiteralExp)
+	}
+	if integerLiteralExp.Value != expectedValue {
+		t.Errorf("IntegerLiteral.Value is not %d. Got %s", expectedValue, integerLiteralExp)
+	}
+	if integerLiteralExp.TokenLiteral() != fmt.Sprintf("%d", expectedValue) {
+		t.Fatalf("IntegerLiteral.TokenLiteral is not '%d'. Got '%s' instead",
+			expectedValue, integerLiteralExp.TokenLiteral())
+	}
 }
 
 // LET testing
@@ -148,14 +164,43 @@ func TestIntegerLiteralExpression(t *testing.T) {
 		t.Fatalf("stmt is not *ast.ExpressionStatement. Got '%q' instead.", stmt)
 	}
 	integerLiteralExp, ok := stmt.Expression.(*ast.IntegerLiteral)
-	if !ok {
-		t.Fatalf("stmt is not *ast.IntegerLiteral. Got '%q' instead.", integerLiteralExp)
+	testIntegerLiteralExpression(t, integerLiteralExp, 2)
+}
+
+func TestPrefixExpression(t *testing.T) {
+	tests := []struct {
+		input            string
+		expectedOperator string
+		expectedValue    int64
+	}{
+		{"!1", "!", 1},
+		{"-4", "-", 4},
 	}
-	if integerLiteralExp.Value != 2 {
-		t.Errorf("IntegerLiteral.Value is not %d. Got %s", 2, integerLiteralExp)
-	}
-	if integerLiteralExp.TokenLiteral() != "2" {
-		t.Fatalf("IntegerLiteral.TokenLiteral is not '2'. Got '%s' instead",
-			integerLiteralExp.TokenLiteral())
+
+	for _, test := range tests {
+		lex := lexer.New(test.input)
+		par := New(lex)
+		program := par.ParseProgram()
+		checkParserErrors(t, par)
+		if program == nil {
+			t.Fatalf("ParseProgram returned nil")
+		}
+		if len(program.Statements) != 1 {
+			t.Fatalf("Got and unexpected number of statements: %d': 1. Expected %d",
+				len(program.Statements), 1)
+		}
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("stmt is not *ast.ExpressionStatement. Got '%q' instead.", stmt)
+		}
+		prefExpStmt, ok := stmt.Expression.(*ast.PrefixExpression)
+		if !ok {
+			t.Fatalf("stmt is not *ast.PrefixExpressionStatement. Got '%q' instead.", stmt)
+		}
+		if prefExpStmt.Operator != test.expectedOperator {
+			t.Fatalf("Expected PrefixExpression.Operator to be '%s'. Got '%s' instead",
+				test.expectedOperator, prefExpStmt.Operator)
+		}
+		testIntegerLiteralExpression(t, prefExpStmt.Right, test.expectedValue)
 	}
 }

@@ -30,5 +30,7 @@ func Start(in io.Reader, out io.Writer) {
 		}
 
 		io.WriteString(out, fmt.Sprintf("Program has %d statement nodes", len(program.Statements)))
+		io.WriteString(out, "\n")
+		io.WriteString(out, fmt.Sprintf("Program back to string: %s", program.String()))
 	}
 }
