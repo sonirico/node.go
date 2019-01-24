@@ -193,14 +193,89 @@ func TestPrefixExpression(t *testing.T) {
 		if !ok {
 			t.Fatalf("stmt is not *ast.ExpressionStatement. Got '%q' instead.", stmt)
 		}
-		prefExpStmt, ok := stmt.Expression.(*ast.PrefixExpression)
+		prefixExpression, ok := stmt.Expression.(*ast.PrefixExpression)
 		if !ok {
-			t.Fatalf("stmt is not *ast.PrefixExpressionStatement. Got '%q' instead.", stmt)
+			t.Fatalf("prefixExpression is not *ast.PrefixExpression. Got '%q' instead.", stmt)
 		}
-		if prefExpStmt.Operator != test.expectedOperator {
+		if prefixExpression.Operator != test.expectedOperator {
 			t.Fatalf("Expected PrefixExpression.Operator to be '%s'. Got '%s' instead",
-				test.expectedOperator, prefExpStmt.Operator)
+				test.expectedOperator, prefixExpression.Operator)
 		}
-		testIntegerLiteralExpression(t, prefExpStmt.Right, test.expectedValue)
+		testIntegerLiteralExpression(t, prefixExpression.Right, test.expectedValue)
+	}
+}
+
+func TestInfixExpression(t *testing.T) {
+	tests := []struct {
+		input            string
+		leftValue        int64
+		expectedOperator string
+		rightValue       int64
+	}{
+		{"1 + 2", 1, "+", 2},
+		{"1 - 2", 1, "-", 2},
+		{"1 * 2", 1, "*", 2},
+		{"1 / 2", 1, "/", 2},
+		{"1 % 2", 1, "%", 2},
+		{"1 ^ 2", 1, "^", 2},
+		{"1 < 2", 1, "<", 2},
+		{"1 > 2", 1, ">", 2},
+		{"1 >= 2", 1, ">=", 2},
+		{"1 <= 2", 1, "<=", 2},
+		{"1 == 2", 1, "==", 2},
+		{"1 != 2", 1, "!=", 2},
+	}
+
+	for _, test := range tests {
+		lex := lexer.New(test.input)
+		par := New(lex)
+		program := par.ParseProgram()
+		checkParserErrors(t, par)
+		if program == nil {
+			t.Fatalf("ParseProgram returned nil")
+		}
+		if len(program.Statements) != 1 {
+			t.Fatalf("Got and unexpected number of statements: %d': 1. Expected %d",
+				len(program.Statements), 1)
+		}
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("stmt is not *ast.ExpressionStatement. Got '%q' instead.", stmt)
+		}
+		infixExpression, ok := stmt.Expression.(*ast.InfixExpression)
+		if !ok {
+			t.Fatalf("infixExpression is not *ast.InfixExpression. Got '%q' instead.", stmt)
+		}
+		testIntegerLiteralExpression(t, infixExpression.Left, test.leftValue)
+		if infixExpression.Operator != test.expectedOperator {
+			t.Fatalf("Expected InfixExpression.Operator to be '%s'. Got '%s' instead",
+				test.expectedOperator, infixExpression.Operator)
+		}
+		testIntegerLiteralExpression(t, infixExpression.Right, test.rightValue)
+	}
+}
+
+func TestOperatorPrecedence(t *testing.T) {
+	tests := []struct {
+		input          string
+		expectedOutput string
+	}{
+		{"1 + 2 + 3", "((1 + 2) + 3)"},
+		{"1 + 2 % 1 * 3 / 2 ^ 6", "(1 + (2 % ((1 * 3) / (2 ^ 6))))"},
+		{"1 > 2 >= 3 < 4 <= 5", "((((1 > 2) >= 3) < 4) <= 5)"},
+	}
+
+	for _, test := range tests {
+		lex := lexer.New(test.input)
+		par := New(lex)
+		prog := par.ParseProgram()
+		if prog == nil {
+			t.Fatalf("ParseProgram returned nil")
+		}
+		checkParserErrors(t, par)
+		if test.expectedOutput != prog.String() {
+			t.Fatalf("Error when parsing precedence. Expected '%s'. Got '%s'",
+				test.expectedOutput, prog.String())
+		}
 	}
 }

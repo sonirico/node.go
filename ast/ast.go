@@ -122,6 +122,35 @@ func (pe *PrefixExpression) String() string {
 	return buffer.String()
 }
 
+// INFIX expression
+type InfixExpression struct {
+	Token token.Token
+
+	Left Expression
+
+	Operator string
+
+	Right Expression
+}
+
+func (ie *InfixExpression) expressionNode() {}
+func (ie *InfixExpression) TokenLiteral() string {
+	return ie.Token.Literal
+}
+func (ie *InfixExpression) String() string {
+	var buffer bytes.Buffer
+
+	buffer.WriteString("(")
+	buffer.WriteString(ie.Left.String())
+	buffer.WriteString(" ")
+	buffer.WriteString(ie.Operator)
+	buffer.WriteString(" ")
+	buffer.WriteString(ie.Right.String())
+	buffer.WriteString(")")
+
+	return buffer.String()
+}
+
 // IDENTIFIER expression
 type Identifier struct {
 	Token token.Token
