@@ -18,6 +18,7 @@ const (
 	MODULE      // %
 	PRODUCT     // * and /
 	POWER       // ^
+	PREFIX      // ! or -
 	CALL        // add(1, 2)
 )
 
@@ -217,7 +218,7 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 
 	p.nextToken()
 
-	expr.Right = p.parseExpression(LOWEST)
+	expr.Right = p.parseExpression(PREFIX)
 
 	return expr
 }
