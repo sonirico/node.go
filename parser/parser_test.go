@@ -19,6 +19,22 @@ func checkParserErrors(t *testing.T, p *Parser) {
 	t.FailNow()
 }
 
+// INDENT expression
+func testIdentifier(t *testing.T, expression ast.Expression, expectedName string) {
+	identifier, ok := expression.(*ast.Identifier)
+	if !ok {
+		t.Fatalf("expression is not *ast.Identifier. Got '%q' instead.", expression)
+	}
+	if identifier.Value != expectedName {
+		t.Errorf("identifier.Value is not '%s'. Got '%s'", expectedName,
+			identifier.Value)
+	}
+	if identifier.TokenLiteral() != expectedName {
+		t.Fatalf("identifier.TokenLiteral is not '%s'. Got '%s' instead",
+			expectedName, identifier.TokenLiteral())
+	}
+}
+
 // INTEGER literal testing
 func testIntegerLiteralExpression(t *testing.T, e ast.Expression, expectedValue int64) {
 	integerLiteralExp, ok := e.(*ast.IntegerLiteral)
@@ -117,7 +133,7 @@ func TestReturnStatement(t *testing.T) {
 }
 
 func TestIdentifierExpression(t *testing.T) {
-	input := "fizzbuzz;"
+	input := "fizzbuzzXX;"
 	lex := lexer.New(input)
 	par := New(lex)
 	prog := par.ParseProgram()
@@ -133,17 +149,7 @@ func TestIdentifierExpression(t *testing.T) {
 	if !ok {
 		t.Fatalf("stmt is not *ast.ExpressionStatement. Got '%q' instead.", stmt)
 	}
-	identifier, ok := expressionStmt.Expression.(*ast.Identifier)
-	if !ok {
-		t.Fatalf("stmt is not *ast.Identifier. Got '%q' instead.", expressionStmt)
-	}
-	if identifier.Value != "fizzbuzz" {
-		t.Errorf("identifier.Value is not %s. Got %s", "fizzbuzz", identifier.Value)
-	}
-	if identifier.TokenLiteral() != "fizzbuzz" {
-		t.Fatalf("expressionStmt.TokenLiteral is not 'fizzbuzz'. Got '%s' instead",
-			identifier.TokenLiteral())
-	}
+	testIdentifier(t, expressionStmt.Expression, "fizzbuzz")
 }
 
 func TestIntegerLiteralExpression(t *testing.T) {
