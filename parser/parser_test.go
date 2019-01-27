@@ -19,35 +19,82 @@ func checkParserErrors(t *testing.T, p *Parser) {
 	t.FailNow()
 }
 
+// LITERAL expression
+func testLiteralExpression(t *testing.T, actual ast.Expression, expected interface{}) bool {
+	switch value := expected.(type) {
+	case int64:
+		return testIntegerLiteralExpression(t, actual, value)
+	case int:
+		return testIntegerLiteralExpression(t, actual, int64(value))
+	case string:
+		return testIdentifier(t, actual, value)
+	}
+	return false
+}
+
+// INFIX expression
+func testInfixExpression(
+	t *testing.T,
+	exp ast.Expression,
+	left interface{}, operator string, right interface{}) {
+
+	infixExpression, ok := exp.(*ast.InfixExpression)
+	if !ok {
+		t.Fatalf("InfixExpression is not *ast.InfixExpression. Got '%q' instead.",
+			exp)
+	}
+	if ok := testLiteralExpression(t, infixExpression.Left, left); !ok {
+		t.Fatalf("InfixExpression.Left is not '%s'. Got '%s'",
+			left, infixExpression.Left.String())
+	}
+	if infixExpression.Operator != operator {
+		t.Fatalf("InfixExpression.Operator to be '%s'. Got '%s' instead",
+			operator, infixExpression.Operator)
+	}
+	if ok := testLiteralExpression(t, infixExpression.Right, right); !ok {
+		t.Fatalf("InfixExpression.Right is not '%q'. Got '%q'",
+			right, infixExpression.Right)
+	}
+}
+
 // INDENT expression
-func testIdentifier(t *testing.T, expression ast.Expression, expectedName string) {
+func testIdentifier(t *testing.T, expression ast.Expression, expectedName string) bool {
 	identifier, ok := expression.(*ast.Identifier)
 	if !ok {
 		t.Fatalf("expression is not *ast.Identifier. Got '%q' instead.", expression)
+		return false
 	}
 	if identifier.Value != expectedName {
 		t.Errorf("identifier.Value is not '%s'. Got '%s'", expectedName,
 			identifier.Value)
+		return false
 	}
 	if identifier.TokenLiteral() != expectedName {
 		t.Fatalf("identifier.TokenLiteral is not '%s'. Got '%s' instead",
 			expectedName, identifier.TokenLiteral())
+		return false
 	}
+
+	return true
 }
 
 // INTEGER literal testing
-func testIntegerLiteralExpression(t *testing.T, e ast.Expression, expectedValue int64) {
+func testIntegerLiteralExpression(t *testing.T, e ast.Expression, expectedValue int64) bool {
 	integerLiteralExp, ok := e.(*ast.IntegerLiteral)
 	if !ok {
 		t.Fatalf("stmt is not *ast.IntegerLiteral. Got '%q' instead.", integerLiteralExp)
+		return false
 	}
 	if integerLiteralExp.Value != expectedValue {
 		t.Errorf("IntegerLiteral.Value is not %d. Got %s", expectedValue, integerLiteralExp)
+		return false
 	}
 	if integerLiteralExp.TokenLiteral() != fmt.Sprintf("%d", expectedValue) {
 		t.Fatalf("IntegerLiteral.TokenLiteral is not '%d'. Got '%s' instead",
 			expectedValue, integerLiteralExp.TokenLiteral())
+		return false
 	}
+	return true
 }
 
 // LET testing
@@ -132,8 +179,8 @@ func TestReturnStatement(t *testing.T) {
 	}
 }
 
-func TestIdentifierExpression(t *testing.T) {
-	input := "fizzbuzzXX;"
+func TestIdentifierLiteralExpression(t *testing.T) {
+	input := "fizzbuzz;"
 	lex := lexer.New(input)
 	par := New(lex)
 	prog := par.ParseProgram()
@@ -207,7 +254,7 @@ func TestPrefixExpression(t *testing.T) {
 			t.Fatalf("Expected PrefixExpression.Operator to be '%s'. Got '%s' instead",
 				test.expectedOperator, prefixExpression.Operator)
 		}
-		testIntegerLiteralExpression(t, prefixExpression.Right, test.expectedValue)
+		testLiteralExpression(t, prefixExpression.Right, test.expectedValue)
 	}
 }
 
@@ -248,16 +295,7 @@ func TestInfixExpression(t *testing.T) {
 		if !ok {
 			t.Fatalf("stmt is not *ast.ExpressionStatement. Got '%q' instead.", stmt)
 		}
-		infixExpression, ok := stmt.Expression.(*ast.InfixExpression)
-		if !ok {
-			t.Fatalf("infixExpression is not *ast.InfixExpression. Got '%q' instead.", stmt)
-		}
-		testIntegerLiteralExpression(t, infixExpression.Left, test.leftValue)
-		if infixExpression.Operator != test.expectedOperator {
-			t.Fatalf("Expected InfixExpression.Operator to be '%s'. Got '%s' instead",
-				test.expectedOperator, infixExpression.Operator)
-		}
-		testIntegerLiteralExpression(t, infixExpression.Right, test.rightValue)
+		testInfixExpression(t, stmt.Expression, test.leftValue, test.expectedOperator, test.rightValue)
 	}
 }
 
