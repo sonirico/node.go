@@ -10,6 +10,8 @@ const (
 	// Literals
 	INT    = "int"
 	STRING = "string"
+	TRUE	= "true"
+	FALSE	= "false"
 
 	// operators
 	PLUS     = "+"
@@ -53,6 +55,8 @@ var keywords = map[string]TokenType{
 	"if":       IF,
 	"else":     ELSE,
 	"return":   RETURN,
+	"true":		TRUE,
+	"false":	FALSE,
 }
 
 func LookupKeyword(literal string) TokenType {

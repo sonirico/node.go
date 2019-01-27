@@ -11,7 +11,8 @@ func TestNextToken(t *testing.T) {
 		!/*%^
 		1 == 3
 		0 != 9
-		4 > 3 >= 3 < 2 <= 2
+		4 > 3 >= 3 < 2 <= 2;
+		true != false;
 	`
 	expected := []struct {
 		expectedType    token.TokenType
@@ -44,6 +45,11 @@ func TestNextToken(t *testing.T) {
 		{token.INT, "2"},
 		{token.LTE, "<="},
 		{token.INT, "2"},
+		{token.SEMICOLON, ";"},
+		{token.TRUE, "true"},
+		{token.NOT_EQ, "!="},
+		{token.FALSE, "false"},
+		{token.SEMICOLON, ";"},
 		{token.EOF, ""},
 	}
 
