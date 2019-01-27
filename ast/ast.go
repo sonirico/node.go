@@ -167,6 +167,21 @@ func (i *Identifier) String() string {
 
 // LITERALS
 
+// Boolean literal
+type BooleanLiteral struct {
+	Token token.Token
+
+	Value bool
+}
+
+func (bl *BooleanLiteral) expressionNode() {}
+func (bl *BooleanLiteral) TokenLiteral() string {
+	return bl.Token.Literal
+}
+func (bl *BooleanLiteral) String() string {
+	return bl.TokenLiteral()
+}
+
 // Integer literal
 type IntegerLiteral struct {
 	Token token.Token
