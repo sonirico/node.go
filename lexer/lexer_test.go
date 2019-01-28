@@ -9,7 +9,7 @@ func TestNextToken(t *testing.T) {
 	input := `
 		let a_b = 5 + 10;
 		!/*%^
-		1 == 3
+		(1 + 2) * 3 == 9;
 		0 != 9
 		4 > 3 >= 3 < 2 <= 2;
 		true != false;
@@ -30,9 +30,16 @@ func TestNextToken(t *testing.T) {
 		{token.ASTERISK, "*"},
 		{token.PERCENT, "%"},
 		{token.POWER, "^"},
+		{token.LPAREN, "("},
 		{token.INT, "1"},
-		{token.EQ, "=="},
+		{token.PLUS, "+"},
+		{token.INT, "2"},
+		{token.RPAREN, ")"},
+		{token.ASTERISK, "*"},
 		{token.INT, "3"},
+		{token.EQ, "=="},
+		{token.INT, "9"},
+		{token.SEMICOLON, ";"},
 		{token.INT, "0"},
 		{token.NOT_EQ, "!="},
 		{token.INT, "9"},
