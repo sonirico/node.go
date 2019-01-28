@@ -114,10 +114,14 @@ func (pe *PrefixExpression) TokenLiteral() string {
 func (pe *PrefixExpression) String() string {
 	var buffer bytes.Buffer
 
-	buffer.WriteString("(")
-	buffer.WriteString(pe.Operator)
-	buffer.WriteString(pe.Right.String())
-	buffer.WriteString(")")
+	if pe.Operator != "" {
+		buffer.WriteString("(")
+		buffer.WriteString(pe.Operator)
+		buffer.WriteString(pe.Right.String())
+		buffer.WriteString(")")
+	} else {
+		buffer.WriteString(pe.Right.String())
+	}
 
 	return buffer.String()
 }

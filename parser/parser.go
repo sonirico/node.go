@@ -82,6 +82,7 @@ func New(lexer *lexer.Lexer) *Parser {
 	parser.registerPrefixFunction(token.INT, parser.parseIntegerLiteral)
 	parser.registerPrefixFunction(token.BANG, parser.parsePrefixExpression)
 	parser.registerPrefixFunction(token.MINUS, parser.parsePrefixExpression)
+	parser.registerPrefixFunction(token.LPAREN, parser.parseGroupedExpression)
 
 	// Infix parsers
 	parser.registerInfixFunction(token.PLUS, parser.parseInfixExpression)
@@ -232,9 +233,11 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	}
 
 	expr.Operator = p.currentToken.Literal
-	//p.nextToken()
+
 	precedence := p.currentPrecedence()
+
 	p.nextToken()
+
 	expr.Right = p.parseExpression(precedence)
 
 	if p.peekTokenIs(token.SEMICOLON) {
@@ -279,6 +282,20 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 	il.Value = value
 
 	return il
+}
+
+func (p *Parser) parseGroupedExpression() ast.Expression {
+	exp := &ast.PrefixExpression{Token: p.currentToken, Operator: ""}
+
+	p.nextToken()
+
+	exp.Right = p.parseExpression(LOWEST)
+
+	if !p.expectPeekToken(token.RPAREN) {
+		return nil
+	}
+
+	return exp
 }
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {
