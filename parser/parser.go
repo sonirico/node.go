@@ -83,6 +83,7 @@ func New(lexer *lexer.Lexer) *Parser {
 	parser.registerPrefixFunction(token.BANG, parser.parsePrefixExpression)
 	parser.registerPrefixFunction(token.MINUS, parser.parsePrefixExpression)
 	parser.registerPrefixFunction(token.LPAREN, parser.parseGroupedExpression)
+	parser.registerPrefixFunction(token.IF, parser.parseIfExpression)
 
 	// Infix parsers
 	parser.registerInfixFunction(token.PLUS, parser.parseInfixExpression)
@@ -296,6 +297,60 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 	}
 
 	return exp
+}
+
+func (p *Parser) parseBlockStatement() ast.BlockStatement {
+	bs := ast.BlockStatement{Token: p.currentToken}
+	bs.Statements = []ast.Statement{}
+
+	p.nextToken()
+
+	for !p.currentTokenIs(token.RBRACE) {
+		stmt := p.parseExpressionStatement()
+		if stmt != nil {
+			bs.Statements = append(bs.Statements, stmt)
+		}
+		p.nextToken()
+	}
+
+	return bs
+}
+
+func (p *Parser) parseIfExpression() ast.Expression {
+	ifExp := &ast.IfExpression{Token: p.currentToken}
+
+	if !p.expectPeekToken(token.LPAREN) {
+		return nil
+	}
+
+	p.nextToken()
+
+	ifExp.Condition = p.parseExpression(LOWEST)
+
+	if !p.expectPeekToken(token.RPAREN) {
+		return nil
+	}
+
+	if !p.expectPeekToken(token.LBRACE) {
+		return nil
+	}
+
+	ifExp.Consequence = p.parseBlockStatement()
+
+	if p.peekTokenIs(token.ELSE) {
+		p.nextToken()
+
+		if !p.expectPeekToken(token.LBRACE) {
+			return nil
+		}
+
+		stmt := p.parseBlockStatement()
+		ifExp.Alternative = &stmt
+
+		p.nextToken()
+	}
+
+	return ifExp
 }
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {

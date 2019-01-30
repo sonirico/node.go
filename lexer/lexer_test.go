@@ -12,7 +12,8 @@ func TestNextToken(t *testing.T) {
 		(1 + 2) * 3 == 9;
 		0 != 9
 		4 > 3 >= 3 < 2 <= 2;
-		true != false;
+		if (true != false) {return 1}
+		;
 	`
 	expected := []struct {
 		expectedType    token.TokenType
@@ -53,9 +54,16 @@ func TestNextToken(t *testing.T) {
 		{token.LTE, "<="},
 		{token.INT, "2"},
 		{token.SEMICOLON, ";"},
+		{token.IF, "if"},
+		{token.LPAREN, "("},
 		{token.TRUE, "true"},
 		{token.NOT_EQ, "!="},
 		{token.FALSE, "false"},
+		{token.RPAREN, ")"},
+		{token.LBRACE, "{"},
+		{token.RETURN, "return"},
+		{token.INT, "1"},
+		{token.RBRACE, "}"},
 		{token.SEMICOLON, ";"},
 		{token.EOF, ""},
 	}

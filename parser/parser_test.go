@@ -388,3 +388,106 @@ func TestOperatorPrecedence(t *testing.T) {
 		}
 	}
 }
+
+func TestIfExpression(t *testing.T) {
+	code := `
+		if (z > 1) {z}
+	`
+	lex := lexer.New(code)
+	par := New(lex)
+	prg := par.ParseProgram()
+	if prg == nil {
+		t.Fatalf("ParseProgram returned nil")
+	}
+	checkParserErrors(t, par)
+	if len(prg.Statements) != 1 {
+		t.Fatalf("Got and unexpected number of statements: %d': 1. Expected %d",
+			len(prg.Statements), 1)
+	}
+	stmt, ok := prg.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt is not *ast.ExpressionStatement. Got '%q' instead.", stmt)
+	}
+	ifExp, ok := stmt.Expression.(*ast.IfExpression)
+	if !ok {
+		t.Fatalf("expression is not *ast.IfExpression. Got '%q' instead.", ifExp)
+	}
+	// The Condition!
+	testInfixExpression(t, ifExp.Condition, "z", ">", 1)
+
+	// The consequence!
+	consequence := ifExp.Consequence
+	if !ok {
+		t.Fatalf("consequence is not *ast.BlockStatement. Got '%q' instead.", consequence)
+	}
+	if len(consequence.Statements) != 1 {
+		t.Fatalf("Expected BlockStatement to have %d statements. Got %d",
+			1, len(consequence.Statements))
+	}
+	consequenceStmt, ok := consequence.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Consequence.Statements[0] is not *ast.ExpressionStatement. Got '%q' instead.",
+			consequenceStmt)
+	}
+	if !testLiteralExpression(t, consequenceStmt.Expression, "z") {
+		return
+	}
+	if ifExp.Alternative != nil {
+		t.Fatalf("IfExp.Alternative is not nil. Got %q", ifExp.Alternative)
+	}
+}
+
+func TestIfWithElseExpression(t *testing.T) {
+	code := `
+		if (true) {z} else {1}'
+	`
+	lex := lexer.New(code)
+	par := New(lex)
+	prg := par.ParseProgram()
+	if prg == nil {
+		t.Fatalf("ParseProgram returned nil")
+	}
+	checkParserErrors(t, par)
+	if len(prg.Statements) != 1 {
+		t.Fatalf("Got and unexpected number of statements: %d': 1. Expected %d",
+			len(prg.Statements), 1)
+	}
+	stmt, ok := prg.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt is not *ast.ExpressionStatement. Got '%q' instead.", stmt)
+	}
+	ifExp, ok := stmt.Expression.(*ast.IfExpression)
+	if !ok {
+		t.Fatalf("expression is not *ast.IfExpression. Got '%q' instead.", ifExp)
+	}
+	// The Condition!
+	testLiteralExpression(t, ifExp.Condition, true)
+	// The consequence!
+	consequence := ifExp.Consequence
+	if len(consequence.Statements) != 1 {
+		t.Fatalf("Expected BlockStatement to have %d statements. Got %d",
+			1, len(consequence.Statements))
+	}
+	consequenceStmt, ok := consequence.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Consequence.Statements[0] is not *ast.ExpressionStatement. Got '%q' instead.",
+			consequenceStmt)
+	}
+	if !testLiteralExpression(t, consequenceStmt.Expression, "z") {
+		return
+	}
+	if ifExp.Alternative == nil {
+		t.Fatalf("IfExpression.Alternative is nil. Got '%q' instead.",
+			ifExp.Alternative)
+	}
+	if len(ifExp.Alternative.Statements) != 1 {
+		t.Fatalf("IfExpression.Alternative got %d statements. Expected %d",
+			len(ifExp.Alternative.Statements), 1)
+	}
+	elseFirstStmt, ok := ifExp.Alternative.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("IfExpression.Alternative.Statements[0] is not *ast.ExpressionStatement. Got '%q' instead.",
+			elseFirstStmt)
+	}
+	testLiteralExpression(t, elseFirstStmt.Expression, 1)
+}

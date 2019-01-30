@@ -44,6 +44,8 @@ const (
 	SEMICOLON = ";"
 	LPAREN    = "("
 	RPAREN    = ")"
+	LBRACE    = "{"
+	RBRACE    = "}"
 )
 
 type TokenType string

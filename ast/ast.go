@@ -98,6 +98,29 @@ func (es *ExpressionStatement) String() string {
 	return ""
 }
 
+// BLOCK statement
+type BlockStatement struct {
+	Token token.Token
+
+	Statements []Statement
+}
+
+func (bs *BlockStatement) statementNode() {}
+func (bs *BlockStatement) TokenLiteral() string {
+	return bs.Token.Literal
+}
+func (bs *BlockStatement) String() string {
+	var buffer bytes.Buffer
+	buffer.WriteString("{")
+	if len(bs.Statements) > 0 {
+		for _, stmt := range bs.Statements {
+			buffer.WriteString(stmt.String())
+		}
+	}
+	buffer.WriteString("}")
+	return buffer.String()
+}
+
 // PREFIX expression
 type PrefixExpression struct {
 	Token token.Token
@@ -167,6 +190,38 @@ func (i *Identifier) TokenLiteral() string {
 }
 func (i *Identifier) String() string {
 	return i.Value
+}
+
+// IF expression
+type IfExpression struct {
+	Token       token.Token
+	Condition   Expression
+	Consequence BlockStatement
+	Alternative *BlockStatement
+}
+
+func (ie *IfExpression) expressionNode() {}
+func (ie *IfExpression) TokenLiteral() string {
+	return ie.Token.Literal
+}
+func (ie *IfExpression) String() string {
+	var buffer bytes.Buffer
+
+	buffer.WriteString("if (")
+	buffer.WriteString(ie.Condition.String())
+	buffer.WriteString(")")
+
+	if len(ie.Consequence.Statements) > 0 {
+		buffer.WriteString(" ")
+		buffer.WriteString(ie.Consequence.String())
+	}
+
+	if ie.Alternative != nil && len(ie.Alternative.Statements) > 0 {
+		buffer.WriteString(" else ")
+		buffer.WriteString(ie.Alternative.String())
+	}
+
+	return buffer.String()
 }
 
 // LITERALS
