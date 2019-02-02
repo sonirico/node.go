@@ -13,7 +13,7 @@ func TestNextToken(t *testing.T) {
 		0 != 9
 		4 > 3 >= 3 < 2 <= 2;
 		if (true != false) {return 1}
-		;
+		fn(x, y, z){};
 	`
 	expected := []struct {
 		expectedType    token.TokenType
@@ -63,6 +63,16 @@ func TestNextToken(t *testing.T) {
 		{token.LBRACE, "{"},
 		{token.RETURN, "return"},
 		{token.INT, "1"},
+		{token.RBRACE, "}"},
+		{token.FUNC, "fn"},
+		{token.LPAREN, "("},
+		{token.IDENTIFIER, "x"},
+		{token.COMMA, ","},
+		{token.IDENTIFIER, "y"},
+		{token.COMMA, ","},
+		{token.IDENTIFIER, "z"},
+		{token.RPAREN, ")"},
+		{token.LBRACE, "{"},
 		{token.RBRACE, "}"},
 		{token.SEMICOLON, ";"},
 		{token.EOF, ""},

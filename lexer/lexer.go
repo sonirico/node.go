@@ -53,6 +53,8 @@ func (l *Lexer) NextToken() token.Token {
 
 	switch l.currentChar {
 	// Delimiters
+	case ',':
+		tok = newToken(token.COMMA, l.currentChar)
 	case '{':
 		tok = newToken(token.LBRACE, l.currentChar)
 		break

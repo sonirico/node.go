@@ -84,6 +84,7 @@ func New(lexer *lexer.Lexer) *Parser {
 	parser.registerPrefixFunction(token.MINUS, parser.parsePrefixExpression)
 	parser.registerPrefixFunction(token.LPAREN, parser.parseGroupedExpression)
 	parser.registerPrefixFunction(token.IF, parser.parseIfExpression)
+	parser.registerPrefixFunction(token.FUNC, parser.parseFunctionExpression)
 
 	// Infix parsers
 	parser.registerInfixFunction(token.PLUS, parser.parseInfixExpression)
@@ -351,6 +352,54 @@ func (p *Parser) parseIfExpression() ast.Expression {
 	}
 
 	return ifExp
+}
+
+func (p *Parser) parseFunctionParameters() []*ast.Identifier {
+	var params []*ast.Identifier
+
+	if p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+		return params
+	}
+
+	p.nextToken()
+	ident := &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
+	params = append(params, ident)
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		params = append(
+			params,
+			&ast.Identifier{
+				Token: p.currentToken,
+				Value: p.currentToken.Literal,
+			})
+	}
+
+	if !p.expectPeekToken(token.RPAREN) {
+		return nil
+	}
+
+	return params
+}
+
+func (p *Parser) parseFunctionExpression() ast.Expression {
+	funcExp := &ast.FunctionLiteral{Token: p.currentToken}
+
+	if !p.expectPeekToken(token.LPAREN) {
+		return nil
+	}
+
+	funcExp.Parameters = p.parseFunctionParameters()
+
+	if !p.expectPeekToken(token.LBRACE) {
+		return nil
+	}
+
+	funcExp.Body = p.parseBlockStatement()
+
+	return funcExp
 }
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {

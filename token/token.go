@@ -41,6 +41,7 @@ const (
 	RETURN = "return"
 
 	// Delimiters
+	COMMA     = ","
 	SEMICOLON = ";"
 	LPAREN    = "("
 	RPAREN    = ")"

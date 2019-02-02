@@ -7,6 +7,12 @@ import (
 	"testing"
 )
 
+func expectAnyParserErrors(t *testing.T, p *Parser) {
+	if len(p.Errors()) < 1 {
+		t.Fatalf("Expected parser to have errors.")
+	}
+}
+
 func checkParserErrors(t *testing.T, p *Parser) {
 	if len(p.Errors()) < 1 {
 		return
@@ -17,6 +23,59 @@ func checkParserErrors(t *testing.T, p *Parser) {
 	}
 
 	t.FailNow()
+}
+
+func testExpressionStatement(t *testing.T, stmt ast.Statement) *ast.ExpressionStatement {
+	expStmt, ok := stmt.(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt is not *ast.ExpressionStatement. Got '%q' instead.", stmt)
+	}
+
+	return expStmt
+}
+
+// FUNCTION expression
+
+func testExpressionIsFunctionLiteral(t *testing.T, exp ast.Expression) *ast.FunctionLiteral {
+	funcExp, ok := exp.(*ast.FunctionLiteral)
+	if !ok {
+		t.Fatalf("Expression is not FunctionLiteral. Got %q", exp)
+	}
+	return funcExp
+}
+
+func testFunctionExpressionParameters(t *testing.T, funcExp *ast.FunctionLiteral, idents []string) {
+	if len(idents) != len(funcExp.Parameters) {
+		t.Fatalf("Expected parameters cardinal to be %d, Got %d",
+			len(idents), len(funcExp.Parameters))
+	}
+	for index, identName := range idents {
+		if identName != funcExp.Parameters[index].TokenLiteral() {
+			t.Fatalf("FunctionLiteral does not have param %s at position %d. Got %s",
+				identName, index, funcExp.Parameters[index].TokenLiteral())
+		}
+	}
+}
+
+func testFunctionExpressionBody(
+	t *testing.T,
+	funcExp *ast.FunctionLiteral,
+	expectedBodyStatementsLength int) {
+	if len(funcExp.Body.Statements) != expectedBodyStatementsLength {
+		t.Fatalf("Expected body statements cardinal to be %d, Got %d",
+			expectedBodyStatementsLength, len(funcExp.Parameters))
+	}
+}
+
+func testFunctionLiteralExpression(
+	t *testing.T,
+	exp ast.Expression,
+	idents []string,
+	bodyStmts int) *ast.FunctionLiteral {
+	funcExp := testExpressionIsFunctionLiteral(t, exp)
+	testFunctionExpressionParameters(t, funcExp, idents)
+	testFunctionExpressionBody(t, funcExp, bodyStmts)
+	return funcExp
 }
 
 // LITERAL expression
@@ -490,4 +549,68 @@ func TestIfWithElseExpression(t *testing.T) {
 			elseFirstStmt)
 	}
 	testLiteralExpression(t, elseFirstStmt.Expression, 1)
+}
+
+func TestFunctionLiteralExpression(t *testing.T) {
+	input := "fn(){}"
+	lex := lexer.New(input)
+	par := New(lex)
+	prg := par.ParseProgram()
+	checkParserErrors(t, par)
+	if len(prg.Statements) != 1 {
+		t.Fatalf("FunctionLiteral got and unexpected number of statements: %d': 1. Expected %d",
+			len(prg.Statements), 1)
+	}
+	stmt := testExpressionStatement(t, prg.Statements[0])
+	testFunctionLiteralExpression(t, stmt.Expression, []string{}, 0)
+}
+
+func TestFunctionParameters_Zero(t *testing.T) {
+	input := "fn(){}"
+	lex := lexer.New(input)
+	par := New(lex)
+	prg := par.ParseProgram()
+	checkParserErrors(t, par)
+	if len(prg.Statements) != 1 {
+		t.Fatalf("FunctionLiteral got and unexpected number of statements: %d': 1. Expected %d",
+			len(prg.Statements), 1)
+	}
+	stmt := testExpressionStatement(t, prg.Statements[0])
+	testFunctionLiteralExpression(t, stmt.Expression, []string{}, 0)
+}
+
+func TestFunctionParameters_One(t *testing.T) {
+	input := "fn(x){}"
+	lex := lexer.New(input)
+	par := New(lex)
+	prg := par.ParseProgram()
+	checkParserErrors(t, par)
+	if len(prg.Statements) != 1 {
+		t.Fatalf("FunctionLiteral got and unexpected number of statements: %d': 1. Expected %d",
+			len(prg.Statements), 1)
+	}
+	stmt := testExpressionStatement(t, prg.Statements[0])
+	testFunctionLiteralExpression(t, stmt.Expression, []string{"x"}, 0)
+}
+
+func TestFunctionParameters_Several(t *testing.T) {
+	input := "fn(x, y, z){}"
+	lex := lexer.New(input)
+	par := New(lex)
+	prg := par.ParseProgram()
+	checkParserErrors(t, par)
+	if len(prg.Statements) != 1 {
+		t.Fatalf("FunctionLiteral got and unexpected number of statements: %d': 1. Expected %d",
+			len(prg.Statements), 1)
+	}
+	stmt := testExpressionStatement(t, prg.Statements[0])
+	testFunctionLiteralExpression(t, stmt.Expression, []string{"x", "y", "z"}, 0)
+}
+
+func TestFunctionParameters_SyntaxError(t *testing.T) {
+	input := "fn(x, y,){}" // There is a missing identifier
+	lex := lexer.New(input)
+	par := New(lex)
+	par.ParseProgram()
+	expectAnyParserErrors(t, par)
 }

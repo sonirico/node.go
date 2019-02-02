@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"node.go/token"
+	"strings"
 )
 
 type Node interface {
@@ -225,6 +226,37 @@ func (ie *IfExpression) String() string {
 }
 
 // LITERALS
+
+// Function literal
+
+type FunctionLiteral struct {
+	Token      token.Token
+	Parameters []*Identifier
+	Body       BlockStatement
+}
+
+func (fl *FunctionLiteral) expressionNode() {}
+func (fl *FunctionLiteral) TokenLiteral() string {
+	return fl.Token.Literal
+}
+func (fl *FunctionLiteral) String() string {
+	var buffer bytes.Buffer
+
+	buffer.WriteString("fn")
+	buffer.WriteString("(")
+	if fl.Parameters != nil && len(fl.Parameters) > 0 {
+		var params []string
+		for _, param := range fl.Parameters {
+			params = append(params, param.String())
+		}
+		buffer.WriteString(strings.Join(params, ", "))
+	}
+	buffer.WriteString(")")
+	buffer.WriteString(" ")
+	buffer.WriteString(fl.Body.String())
+
+	return buffer.String()
+}
 
 // Boolean literal
 type BooleanLiteral struct {

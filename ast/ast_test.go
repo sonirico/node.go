@@ -5,7 +5,15 @@ import (
 	"testing"
 )
 
-func TestAstString(t *testing.T) {
+func testProgramString(t *testing.T, actual *Program, expectedRpr string) {
+	if expectedRpr != actual.String() {
+		t.Errorf("Unexpected program.String(). Expected '%s'. Got '%s'.",
+			expectedRpr, actual.String())
+	}
+}
+
+func TestLetStatement_String(t *testing.T) {
+	expected := "let variable = 1;"
 	prog := &Program{
 		Statements: []Statement{
 			&LetStatement{
@@ -30,14 +38,10 @@ func TestAstString(t *testing.T) {
 			},
 		},
 	}
-	expected := "let variable = 1;"
-	if expected != prog.String() {
-		t.Errorf("Unexpected program.String(). Expected '%s'. Got '%s'.",
-			expected, prog.String())
-	}
+	testProgramString(t, prog, expected)
 }
 
-func TestIfExpressionToString(t *testing.T) {
+func TestIfExpression_String(t *testing.T) {
 	prg := &Program{
 		Statements: []Statement{
 			&ExpressionStatement{
@@ -95,4 +99,33 @@ func TestIfExpressionToString(t *testing.T) {
 		t.Errorf("Unexpected program.String(). Expected '%s'. Got '%s'.",
 			expected, prg.String())
 	}
+}
+
+func TestFunctionLiteral_String(t *testing.T) {
+	expected := "fn() {}"
+	prg := &Program{
+		Statements: []Statement{
+			&ExpressionStatement{
+				Token: token.Token{
+					Type:    token.FUNC,
+					Literal: "fn",
+				},
+				Expression: &FunctionLiteral{
+					Token: token.Token{
+						Type:    token.FUNC,
+						Literal: "fn",
+					},
+					Parameters: []*Identifier{},
+					Body: BlockStatement{
+						Token: token.Token{
+							Type:    token.LBRACE,
+							Literal: "{",
+						},
+						Statements: []Statement{},
+					},
+				},
+			},
+		},
+	}
+	testProgramString(t, prg, expected)
 }
