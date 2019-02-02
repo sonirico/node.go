@@ -288,6 +288,35 @@ func (il *IntegerLiteral) String() string {
 	return il.Token.Literal
 }
 
+type CallExpression struct {
+	Token token.Token
+
+	Function Expression
+
+	Arguments []Expression
+}
+
+func (ce *CallExpression) expressionNode() {}
+func (ce *CallExpression) TokenLiteral() string {
+	return ce.Token.Literal
+}
+func (ce *CallExpression) String() string {
+	var buffer bytes.Buffer
+
+	buffer.WriteString(ce.Function.String())
+	buffer.WriteString("(")
+	var arguments []string
+	if ce.Arguments != nil {
+		for _, ParamExpression := range ce.Arguments {
+			arguments = append(arguments, ParamExpression.String())
+		}
+	}
+	buffer.WriteString(strings.Join(arguments, ", "))
+	buffer.WriteString(")")
+
+	return buffer.String()
+}
+
 // PROGRAM - The root node!
 type Program struct {
 	Statements []Statement

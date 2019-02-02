@@ -14,6 +14,7 @@ func TestNextToken(t *testing.T) {
 		4 > 3 >= 3 < 2 <= 2;
 		if (true != false) {return 1}
 		fn(x, y, z){};
+		sum(1, 2)
 	`
 	expected := []struct {
 		expectedType    token.TokenType
@@ -75,6 +76,12 @@ func TestNextToken(t *testing.T) {
 		{token.LBRACE, "{"},
 		{token.RBRACE, "}"},
 		{token.SEMICOLON, ";"},
+		{token.IDENTIFIER, "sum"},
+		{token.LPAREN, "("},
+		{token.INT, "1"},
+		{token.COMMA, ","},
+		{token.INT, "2"},
+		{token.RPAREN, ")"},
 		{token.EOF, ""},
 	}
 

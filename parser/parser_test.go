@@ -7,6 +7,20 @@ import (
 	"testing"
 )
 
+func checkProgram(t *testing.T, p *ast.Program) {
+	if p == nil {
+		t.Fatalf("Parser.ParseProgram returned nil")
+	}
+}
+
+func checkProgramStatements(t *testing.T, p *ast.Program, expectedStatementsLength int) {
+	checkProgram(t, p)
+	if expectedStatementsLength != len(p.Statements) {
+		t.Fatalf("Expected program to have %d statements. Got %d.",
+			expectedStatementsLength, len(p.Statements))
+	}
+}
+
 func expectAnyParserErrors(t *testing.T, p *Parser) {
 	if len(p.Errors()) < 1 {
 		t.Fatalf("Expected parser to have errors.")
@@ -431,6 +445,22 @@ func TestOperatorPrecedence(t *testing.T) {
 		{"(1 > 2) ^ (2 > 3)", "((1 > 2) ^ (2 > 3))"},
 		{"true == (2 == 2)", "(true == (2 == 2))"},
 		{"!2 / (1 + 1) > 1", "(((!2) / (1 + 1)) > 1)"},
+		{
+			"sum(1 + 2, 3 * 4 ^ 5, fn(){}, sub(1, 0))",
+			"sum((1 + 2), (3 * (4 ^ 5)), fn() {}, sub(1, 0))",
+		},
+		{
+			"2 ^ add(2, 4) * 8",
+			"((2 ^ add(2, 4)) * 8)",
+		},
+		{
+			"2 ^ add(2, 4) * 8",
+			"((2 ^ add(2, 4)) * 8)",
+		},
+		{
+			"!isTrue(1 > 2)",
+			"(!isTrue((1 > 2)))",
+		},
 	}
 
 	for _, test := range tests {
@@ -613,4 +643,32 @@ func TestFunctionParameters_SyntaxError(t *testing.T) {
 	par := New(lex)
 	par.ParseProgram()
 	expectAnyParserErrors(t, par)
+}
+
+func TestCallExpression(t *testing.T) {
+	input := `sum(1, 2)`
+	lex := lexer.New(input)
+	par := New(lex)
+	prg := par.ParseProgram()
+	checkProgram(t, prg)
+	stmt := testExpressionStatement(t, prg.Statements[0])
+	callExp, ok := stmt.Expression.(*ast.CallExpression)
+	if !ok {
+		t.Fatalf("expression expected to be CallExpression. Got %q", stmt.Expression)
+	}
+
+	testLiteralExpression(t, callExp.Function, "sum")
+
+	expectedParameters := []int{1, 2}
+
+	if len(expectedParameters) != len(callExp.Arguments) {
+		t.Fatalf("CallExpression expected to have %d parameters. Got %d",
+			len(expectedParameters), len(callExp.Arguments))
+	}
+
+	for index, expParam := range expectedParameters {
+		actualParam := callExp.Arguments[index]
+		testLiteralExpression(t, actualParam, expParam)
+	}
+
 }

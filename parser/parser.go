@@ -35,6 +35,7 @@ var precedences = map[token.TokenType]int{
 	token.ASTERISK: PRODUCT,
 	token.SLASH:    PRODUCT,
 	token.POWER:    POWER,
+	token.LPAREN:   CALL,
 }
 
 func getPrecedence(tokenType token.TokenType) int {
@@ -100,6 +101,7 @@ func New(lexer *lexer.Lexer) *Parser {
 	parser.registerInfixFunction(token.LTE, parser.parseInfixExpression)
 	parser.registerInfixFunction(token.GTE, parser.parseInfixExpression)
 	parser.registerInfixFunction(token.PERCENT, parser.parseInfixExpression)
+	parser.registerInfixFunction(token.LPAREN, parser.parseCallExpression)
 
 	return parser
 }
@@ -400,6 +402,36 @@ func (p *Parser) parseFunctionExpression() ast.Expression {
 	funcExp.Body = p.parseBlockStatement()
 
 	return funcExp
+}
+
+func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	callExp := &ast.CallExpression{Token: p.currentToken, Function: function}
+	callExp.Arguments = []ast.Expression{}
+
+	if !p.currentTokenIs(token.LPAREN) {
+		return nil
+	}
+
+	if p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+		return callExp
+	}
+
+	p.nextToken()
+
+	callExp.Arguments = append(callExp.Arguments, p.parseExpression(LOWEST))
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		callExp.Arguments = append(callExp.Arguments, p.parseExpression(LOWEST))
+	}
+
+	if !p.expectPeekToken(token.RPAREN) {
+		return nil
+	}
+
+	return callExp
 }
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {

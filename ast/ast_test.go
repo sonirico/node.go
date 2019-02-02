@@ -129,3 +129,47 @@ func TestFunctionLiteral_String(t *testing.T) {
 	}
 	testProgramString(t, prg, expected)
 }
+
+func TestCallExpression_String(t *testing.T) {
+	expected := "sum(a, 2)"
+	prg := &Program{
+		Statements: []Statement{
+			&ExpressionStatement{
+				Token: token.Token{
+					Type:    token.FUNC,
+					Literal: "sum",
+				},
+				Expression: &CallExpression{
+					Token: token.Token{
+						Type:    token.FUNC,
+						Literal: "sum",
+					},
+					Function: &Identifier{
+						Token: token.Token{
+							Type:    token.IDENTIFIER,
+							Literal: "sum",
+						},
+						Value: "sum",
+					},
+					Arguments: []Expression{
+						&Identifier{
+							Token: token.Token{
+								Type:    token.IDENTIFIER,
+								Literal: "a",
+							},
+							Value: "a",
+						},
+						&Identifier{
+							Token: token.Token{
+								Type:    token.IDENTIFIER,
+								Literal: "2",
+							},
+							Value: "2",
+						},
+					},
+				},
+			},
+		},
+	}
+	testProgramString(t, prg, expected)
+}
