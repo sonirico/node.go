@@ -194,7 +194,10 @@ func testIntegerLiteralExpression(t *testing.T, e ast.Expression, expectedValue 
 }
 
 // LET testing
-func testLetStatement(t *testing.T, actualStmt ast.Statement, expectedIdentName string) bool {
+func testLetStatement(t *testing.T, actualStmt ast.Statement, expected struct {
+	Name  string
+	Value interface{}
+}) bool {
 	if actualStmt.TokenLiteral() != "let" {
 		t.Errorf("stmt.TokenLiteral wasn't 'let'. Got %q", actualStmt.TokenLiteral())
 		return false
@@ -204,15 +207,19 @@ func testLetStatement(t *testing.T, actualStmt ast.Statement, expectedIdentName 
 		t.Errorf("stmt wasn't LetStatement, got %s", actualStmt)
 		return false
 	}
-	if letStmt.Name.Value != expectedIdentName {
+	if letStmt.Name.Value != expected.Name {
 		t.Errorf("LetStmt.Name.Value wasn't '%s'. Got '%s'",
-			expectedIdentName, letStmt.Name.Value)
+			expected.Name, letStmt.Name.Value)
 		return false
 	}
-	if letStmt.Name.TokenLiteral() != expectedIdentName {
+	if letStmt.Name.TokenLiteral() != expected.Name {
 		t.Errorf("LetStmt.Name.TokenLiteral wasn't '%s'. Got '%s'",
-			expectedIdentName, letStmt.Name.TokenLiteral())
+			expected.Name, letStmt.Name.TokenLiteral())
 		return false
+	}
+	if expected.Value != nil && !testLiteralExpression(t, letStmt.Value, expected.Value) {
+		t.Errorf("LetStatement.Value is wrong. Expected %q. Got %q",
+			expected.Value, letStmt.Value)
 	}
 	return true
 }
@@ -220,8 +227,8 @@ func testLetStatement(t *testing.T, actualStmt ast.Statement, expectedIdentName 
 func TestLetStatements(t *testing.T) {
 	code := `
 		let foo;
-		let bar = foo;
-		let foobar;
+		let bar = true;
+		let foobar = bar;
 	`
 	lex := lexer.New(code)
 	par := New(lex)
@@ -235,15 +242,16 @@ func TestLetStatements(t *testing.T) {
 		t.Fatalf("Expected statements: 3. Got %d", len(program.Statements))
 	}
 	expected := []struct {
-		Name string
+		Name  string
+		Value interface{}
 	}{
-		{"foo"},
-		{"bar"},
-		{"foobar"},
+		{"foo", nil},
+		{"bar", true},
+		{"foobar", "bar"},
 	}
 	for index, expectedIdentifier := range expected {
 		stmt := program.Statements[index]
-		testLetStatement(t, stmt, expectedIdentifier.Name)
+		testLetStatement(t, stmt, expectedIdentifier)
 	}
 }
 
