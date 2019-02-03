@@ -194,9 +194,13 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 
 	p.nextToken()
 
-	// Well, there is no expression parsing yet xD
-	// TODO: Implement expression parsing.
-	for !p.currentTokenIs(token.SEMICOLON) {
+	if p.currentTokenIs(token.SEMICOLON) {
+		return stmt
+	}
+
+	stmt.ReturnValue = p.parseExpression(LOWEST)
+
+	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 
@@ -442,7 +446,8 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	prefixParserFunction := p.prefixParserFunctions[tokenType]
 
 	if prefixParserFunction == nil {
-		msg := fmt.Sprintf("there is not registered prefix parser function for token type %q", tokenType)
+		msg := fmt.Sprintf("there is not a prefix parser function registered for token type %q",
+			tokenType)
 		p.addError(msg)
 		return nil
 	}

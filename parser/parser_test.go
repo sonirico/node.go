@@ -86,6 +86,7 @@ func testFunctionLiteralExpression(
 	exp ast.Expression,
 	idents []string,
 	bodyStmts int) *ast.FunctionLiteral {
+
 	funcExp := testExpressionIsFunctionLiteral(t, exp)
 	testFunctionExpressionParameters(t, funcExp, idents)
 	testFunctionExpressionBody(t, funcExp, bodyStmts)
@@ -104,6 +105,7 @@ func testLiteralExpression(t *testing.T, actual ast.Expression, expected interfa
 	case bool:
 		return testBooleanLiteralExpression(t, actual, value)
 	}
+
 	t.Errorf("There is no literal test check for expression of type %q", expected)
 	return false
 }
@@ -193,7 +195,6 @@ func testIntegerLiteralExpression(t *testing.T, e ast.Expression, expectedValue 
 	return true
 }
 
-// LET testing
 func testLetStatement(t *testing.T, actualStmt ast.Statement, expected struct {
 	Name  string
 	Value interface{}
@@ -255,31 +256,43 @@ func TestLetStatements(t *testing.T) {
 	}
 }
 
+func testReturnStatement(t *testing.T, stmt ast.Statement, expected interface{}) {
+	returnStmt, ok := stmt.(*ast.ReturnStatement)
+	if !ok {
+		t.Fatalf("stmt is not an *ast.ReturnStatement. Got '%q' instead", stmt)
+	}
+	if returnStmt.TokenLiteral() != "return" {
+		t.Fatalf("ReturnStatment.TokenLiteral is not 'return'. Got '%s' instead",
+			returnStmt.TokenLiteral())
+	}
+	if expected == nil {
+		if returnStmt.ReturnValue != nil {
+			t.Fatalf("ReturnStatement.ReturnValue is not nil. Got '%q'",
+				returnStmt.ReturnValue)
+		}
+	} else if !testLiteralExpression(t, returnStmt.ReturnValue, expected) {
+		t.Fatalf("ReturnStatement.ReturnValue is wrong. Expected %q. Got %q",
+			expected, returnStmt.ReturnValue)
+	}
+}
+
 func TestReturnStatement(t *testing.T) {
-	code := `
-		return 1;
-		return 3 * 4;
-		return function (x) {x};
-	`
-	lex := lexer.New(code)
-	par := New(lex)
-	prog := par.ParseProgram()
-	checkParserErrors(t, par)
-	if prog == nil {
-		t.Fatalf("ParseProgram returned nil")
+	tests := []struct {
+		input           string
+		expectedLiteral interface{}
+	}{
+		{"return;", nil},
+		{"return 3", 3},
+		{"return theadventofcode", "theadventofcode"},
 	}
-	if len(prog.Statements) != 3 {
-		t.Fatalf("Expected 'ReturnStatements': 3. Got %d", len(prog.Statements))
-	}
-	for _, stmt := range prog.Statements {
-		returnStmt, ok := stmt.(*ast.ReturnStatement)
-		if !ok {
-			t.Fatalf("stmt is not an *ast.ReturnStatement. Got '%q' instead", stmt)
-		}
-		if returnStmt.TokenLiteral() != "return" {
-			t.Fatalf("returnStatment.TokenLiteral is not 'return'. Got '%s' instead",
-				returnStmt.TokenLiteral())
-		}
+	for _, test := range tests {
+		lex := lexer.New(test.input)
+		par := New(lex)
+		prg := par.ParseProgram()
+		checkParserErrors(t, par)
+		checkProgramStatements(t, prg, 1)
+		stmt := prg.Statements[0]
+		testReturnStatement(t, stmt, test.expectedLiteral)
 	}
 }
 

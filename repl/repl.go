@@ -2,13 +2,12 @@ package repl
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"node.go/lexer"
 	"node.go/parser"
 )
 
-const PROMPT = "\n/> "
+const PROMPT = "{o_o}-> "
 
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
@@ -25,12 +24,14 @@ func Start(in io.Reader, out io.Writer) {
 		if len(par.Errors()) > 0 {
 			for _, errorMessage := range par.Errors() {
 				io.WriteString(out, errorMessage)
+				io.WriteString(out, "\n")
 			}
+			io.WriteString(out, "\n")
 			continue
 		}
 
-		io.WriteString(out, fmt.Sprintf("Program has %d statement nodes", len(program.Statements)))
 		io.WriteString(out, "\n")
-		io.WriteString(out, fmt.Sprintf("Program back to string: %s", program.String()))
+		io.WriteString(out, program.String())
+		io.WriteString(out, "\n")
 	}
 }
