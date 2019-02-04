@@ -3,11 +3,12 @@ package repl
 import (
 	"bufio"
 	"io"
+	"node.go/evaluator"
 	"node.go/lexer"
 	"node.go/parser"
 )
 
-const PROMPT = "{o_o}-> "
+const PROMPT = "{o_o} > "
 
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
@@ -29,9 +30,10 @@ func Start(in io.Reader, out io.Writer) {
 			io.WriteString(out, "\n")
 			continue
 		}
+		evaluatedObject := evaluator.Eval(program)
 
 		io.WriteString(out, "\n")
-		io.WriteString(out, program.String())
+		io.WriteString(out, evaluatedObject.Inspect())
 		io.WriteString(out, "\n")
 	}
 }
