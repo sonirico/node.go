@@ -51,9 +51,7 @@ func evalIntegerToBoolean(value int64) *object.Boolean {
 func evalBangOperatorExpression(obj object.Object) object.Object {
 	switch obj.Type() {
 	case object.BOOL:
-		{
-			return evalBooleanLiteral(obj)
-		}
+		return evalBooleanLiteral(obj)
 	case object.INT:
 		{
 			intObj, _ := obj.(*object.Integer)

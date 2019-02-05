@@ -36,7 +36,7 @@ func testNullObject(t *testing.T, obj object.Object) bool {
 func testBooleanObject(t *testing.T, obj object.Object, expected bool) bool {
 	booleanObj, ok := obj.(*object.Boolean)
 	if !ok {
-		t.Errorf("Object is not Boolean. Got %q", obj)
+		t.Errorf("Object is not Boolean. Got %s<%s>", obj.Inspect(), obj.Type())
 		return false
 	}
 	if booleanObj.Value != expected {
@@ -82,6 +82,12 @@ func TestEvalBooleanObject(t *testing.T) {
 	}{
 		{"true", true},
 		{"false", false},
+		{"!true", false},
+		{"!false", true},
+		{"!!true", true},
+		{"!!false", false},
+		{"!1", false},
+		{"!!1", true},
 	}
 	for _, test := range tests {
 		evaluated := testEval(t, test.input)
