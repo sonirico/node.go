@@ -1,7 +1,6 @@
 package evaluator
 
 import (
-	"fmt"
 	"node.go/ast"
 	"node.go/object"
 )
@@ -76,25 +75,22 @@ func evalPrefixExpression(operator string, obj object.Object) object.Object {
 }
 
 func Eval(node ast.Node) object.Object {
-	var result object.Object
 	switch node := node.(type) {
 	case *ast.Program:
 		{
+			var result object.Object
 			for _, stmt := range node.Statements {
 				result = Eval(stmt)
 			}
+			return result
 		}
 	case *ast.ExpressionStatement:
-		result = Eval(node.Expression)
-		break
+		return Eval(node.Expression)
 	case *ast.IntegerLiteral:
-		result = object.NewInteger(node.Value)
-		break
+		return object.NewInteger(node.Value)
 	case *ast.BooleanLiteral:
 		return booleanToObject(node.Value)
 	}
-	if result == nil {
-		fmt.Println(fmt.Sprintf("There is no an evaluator function for %q", node))
-	}
-	return result
+
+	return object.NewNull()
 }

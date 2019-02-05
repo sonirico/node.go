@@ -24,6 +24,15 @@ func testEval(t *testing.T, code string) object.Object {
 	return evaluated
 }
 
+func testNullObject(t *testing.T, obj object.Object) bool {
+	_, ok := obj.(*object.Null)
+	if !ok {
+		t.Errorf("Object is not Null. Got %q", obj)
+		return false
+	}
+	return true
+}
+
 func testBooleanObject(t *testing.T, obj object.Object, expected bool) bool {
 	booleanObj, ok := obj.(*object.Boolean)
 	if !ok {
@@ -78,4 +87,9 @@ func TestEvalBooleanObject(t *testing.T) {
 		evaluated := testEval(t, test.input)
 		testBooleanObject(t, evaluated, test.expected)
 	}
+}
+
+func TestEvalNullObject(t *testing.T) {
+	evaluated := testEval(t, "null")
+	testNullObject(t, evaluated)
 }
