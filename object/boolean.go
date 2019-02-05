@@ -19,3 +19,8 @@ func (b *Boolean) Inspect() string {
 		return "false"
 	}
 }
+
+var (
+	TRUE  = NewBoolean(true)
+	FALSE = NewBoolean(false)
+)

@@ -8,7 +8,7 @@ type Object interface {
 }
 
 const (
-	INT  Type = "INTEGER"
-	BOOL      = "BOOLEAN"
-	NULL      = "NULL"
+	INT       Type = "INTEGER"
+	BOOL           = "BOOLEAN"
+	NULL_TYPE      = "NULL"
 )

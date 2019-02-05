@@ -67,7 +67,7 @@ func TestEvalIntegerObject(t *testing.T) {
 		{"1", 1},
 		{"0", 0},
 		{"999", 999},
-		//{"-2", -2},
+		{"-2", -2},
 	}
 	for _, test := range tests {
 		evaluated := testEval(t, test.input)

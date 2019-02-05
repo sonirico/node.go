@@ -3,6 +3,7 @@ package evaluator
 import (
 	"node.go/ast"
 	"node.go/object"
+	"node.go/token"
 )
 
 func booleanToObject(value bool) object.Object {
@@ -77,20 +78,20 @@ func evalPrefixExpression(operator string, obj object.Object) object.Object {
 func Eval(node ast.Node) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
-		{
-			var result object.Object
-			for _, stmt := range node.Statements {
-				result = Eval(stmt)
-			}
-			return result
-		}
+		return evalStatements(node.Statements)
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression)
+	case *ast.PrefixExpression:
+		{
+			operator := node.Operator
+			right := Eval(node.Right)
+			return evalPrefixExpression(operator, right)
+		}
 	case *ast.IntegerLiteral:
 		return object.NewInteger(node.Value)
 	case *ast.BooleanLiteral:
 		return booleanToObject(node.Value)
 	}
 
-	return object.NewNull()
+	return object.NULL
 }

@@ -7,9 +7,11 @@ func NewNull() *Null {
 }
 
 func (n *Null) Type() Type {
-	return NULL
+	return NULL_TYPE
 }
 
 func (n *Null) Inspect() string {
 	return "null"
 }
+
+var NULL = NewNull()
