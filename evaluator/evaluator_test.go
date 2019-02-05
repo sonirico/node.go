@@ -17,10 +17,27 @@ func testEval(t *testing.T, code string) object.Object {
 	if len(prg.Statements) < 1 {
 		t.Fatalf("ast.Program has got no nodes")
 	}
-	return Eval(prg)
+	evaluated := Eval(prg)
+	if evaluated == nil {
+		t.Fatalf("Eval returned nil")
+	}
+	return evaluated
 }
 
-func testIntegerObjectEval(t *testing.T, obj object.Object, expected int64) bool {
+func testBooleanObject(t *testing.T, obj object.Object, expected bool) bool {
+	booleanObj, ok := obj.(*object.Boolean)
+	if !ok {
+		t.Errorf("Object is not Boolean. Got %q", obj)
+		return false
+	}
+	if booleanObj.Value != expected {
+		t.Errorf("Boolean.Value is not %t. Got %t", expected, booleanObj.Value)
+		return false
+	}
+	return true
+}
+
+func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
 	integer, ok := obj.(*object.Integer)
 	if !ok {
 		t.Errorf("Object is not Integer. Got %s", obj.Type())
@@ -33,7 +50,7 @@ func testIntegerObjectEval(t *testing.T, obj object.Object, expected int64) bool
 	return true
 }
 
-func TestIntegerObjectEvaluation(t *testing.T) {
+func TestEvalIntegerObject(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected int64
@@ -45,9 +62,20 @@ func TestIntegerObjectEvaluation(t *testing.T) {
 	}
 	for _, test := range tests {
 		evaluated := testEval(t, test.input)
-		if evaluated == nil {
-			t.Fatal("evaluator.Eval returned nil")
-		}
-		testIntegerObjectEval(t, evaluated, test.expected)
+		testIntegerObject(t, evaluated, test.expected)
+	}
+}
+
+func TestEvalBooleanObject(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"true", true},
+		{"false", false},
+	}
+	for _, test := range tests {
+		evaluated := testEval(t, test.input)
+		testBooleanObject(t, evaluated, test.expected)
 	}
 }

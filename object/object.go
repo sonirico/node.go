@@ -7,6 +7,7 @@ type Object interface {
 	Inspect() string
 }
 
-var (
-	INT Type = "INTEGER"
+const (
+	INT  Type = "INTEGER"
+	BOOL      = "BOOLEAN"
 )
