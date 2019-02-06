@@ -68,6 +68,11 @@ func TestEvalIntegerObject(t *testing.T) {
 		{"0", 0},
 		{"999", 999},
 		{"-2", -2},
+		{"1 + 1", 2},
+		{"1 - 3", -2},
+		{"1 - -3", 4},
+		{"2 * (1 + 3)", 8},
+		{"1 + 2 * 3 / 2 - 4", 0},
 	}
 	for _, test := range tests {
 		evaluated := testEval(t, test.input)
@@ -88,6 +93,19 @@ func TestEvalBooleanObject(t *testing.T) {
 		{"!!false", false},
 		{"!1", false},
 		{"!!1", true},
+		//{"true == true", true},
+		//{"false == true", false},
+		//{"false != true", true},
+		//{"false != false", false},
+		//{"1 > 1", false},
+		//{"1 > -1", true},
+		//{"1 == 1", true},
+		//{"0 < 1", true},
+		//{"2 < 1", false},
+		//{"1 != 1", false},
+		//{"-1 != 1", true},
+		//{"(2 > 0) == true", true},
+		//{"!(2 > 0) == true", false},
 	}
 	for _, test := range tests {
 		evaluated := testEval(t, test.input)
@@ -96,6 +114,9 @@ func TestEvalBooleanObject(t *testing.T) {
 }
 
 func TestEvalNullObject(t *testing.T) {
-	evaluated := testEval(t, "null")
-	testNullObject(t, evaluated)
+	tests := []string{"null", "1 / 0"}
+	for _, test := range tests {
+		evaluated := testEval(t, test)
+		testNullObject(t, evaluated)
+	}
 }

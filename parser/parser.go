@@ -296,11 +296,9 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 }
 
 func (p *Parser) parseGroupedExpression() ast.Expression {
-	exp := &ast.PrefixExpression{Token: p.currentToken, Operator: ""}
-
 	p.nextToken()
 
-	exp.Right = p.parseExpression(LOWEST)
+	exp := p.parseExpression(LOWEST)
 
 	if !p.expectPeekToken(token.RPAREN) {
 		return nil
