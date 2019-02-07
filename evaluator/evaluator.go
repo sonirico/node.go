@@ -85,10 +85,34 @@ func evalInfixIntegerExpression(
 	case token.MINUS:
 		return object.NewInteger(leftValue - rightValue)
 	case token.SLASH:
-		if 0 == rightValue {
-			return object.NULL
+		{
+			if 0 == rightValue {
+				return object.NULL
+			}
+			return object.NewInteger(leftValue / rightValue)
 		}
-		return object.NewInteger(leftValue / rightValue)
+	case token.EQ:
+		return booleanToObject(leftValue == rightValue)
+	case token.NOT_EQ:
+		return booleanToObject(leftValue != rightValue)
+	case token.LT:
+		return booleanToObject(leftValue < rightValue)
+	case token.GT:
+		return booleanToObject(leftValue > rightValue)
+	case token.LTE:
+		return booleanToObject(leftValue <= rightValue)
+	case token.GTE:
+		return booleanToObject(leftValue >= rightValue)
+	}
+	return object.NULL
+}
+
+func evalInfixBooleanExpression(operator string, left object.Object, right object.Object) object.Object {
+	switch operator {
+	case token.EQ:
+		return booleanToObject(left == right)
+	case token.NOT_EQ:
+		return booleanToObject(left != right)
 	}
 	return object.NULL
 }
@@ -98,6 +122,8 @@ func evalInfixOperatorExpression(
 	switch {
 	case left.Type() == object.INT && right.Type() == object.INT:
 		return evalInfixIntegerExpression(operator, left, right)
+	case left.Type() == object.BOOL && right.Type() == object.BOOL:
+		return evalInfixBooleanExpression(operator, left, right)
 	}
 	return object.NULL
 }
