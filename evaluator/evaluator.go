@@ -128,9 +128,33 @@ func evalInfixOperatorExpression(
 	return object.NULL
 }
 
+func isTruthy(obj object.Object) bool {
+	if obj == object.FALSE || obj == object.NULL {
+		return false
+	}
+	if obj.Type() == object.INT {
+		intObj, _ := obj.(*object.Integer)
+		return intObj.Value != 0
+	}
+	return true
+}
+
+func evalIfConditionalExpression(ifExpression *ast.IfExpression) object.Object {
+	evaluatedCondition := Eval(ifExpression.Condition)
+	if isTruthy(evaluatedCondition) {
+		return Eval(&ifExpression.Consequence)
+	}
+	if ifExpression.Alternative != nil {
+		return Eval(ifExpression.Alternative)
+	}
+	return object.NULL
+}
+
 func Eval(node ast.Node) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
+		return evalStatements(node.Statements)
+	case *ast.BlockStatement:
 		return evalStatements(node.Statements)
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression)
@@ -146,6 +170,8 @@ func Eval(node ast.Node) object.Object {
 			right := Eval(node.Right)
 			return evalInfixOperatorExpression(node.Operator, left, right)
 		}
+	case *ast.IfExpression:
+		return evalIfConditionalExpression(node)
 	case *ast.IntegerLiteral:
 		return object.NewInteger(node.Value)
 	case *ast.BooleanLiteral:

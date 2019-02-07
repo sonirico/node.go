@@ -46,13 +46,13 @@ func testBooleanObject(t *testing.T, obj object.Object, expected bool) bool {
 	return true
 }
 
-func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
+func testIntegerObject(t *testing.T, obj object.Object, expected int) bool {
 	integer, ok := obj.(*object.Integer)
 	if !ok {
 		t.Errorf("Object is not Integer. Got %s", obj.Type())
 		return false
 	}
-	if expected != integer.Value {
+	if expected != int(integer.Value) {
 		t.Errorf("Integer.Value is not %d. Got %d", expected, integer.Value)
 		return false
 	}
@@ -62,7 +62,7 @@ func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
 func TestEvalIntegerObject(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected int64
+		expected int
 	}{
 		{"1", 1},
 		{"0", 0},
@@ -118,5 +118,30 @@ func TestEvalNullObject(t *testing.T) {
 	for _, test := range tests {
 		evaluated := testEval(t, test)
 		testNullObject(t, evaluated)
+	}
+}
+
+func TestIfConditionalEval(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected interface{}
+	}{
+		{"if (true) {1}", 1},
+		{"if (false) {1}", nil},
+		{"if (2 > 0) {null}", nil},
+		{"if (false) {1} else {2}", 2},
+		{"if (false == (1 == 1)) {1} else {2}", 2},
+		{"if (null) {} else {2}", 2},
+		{"if (0) {} else {2}", 2},
+	}
+	for _, test := range tests {
+		expected := test.expected
+		evaluated := testEval(t, test.code)
+		if expected == nil {
+			testNullObject(t, evaluated)
+		} else {
+			intExp, _ := expected.(int)
+			testIntegerObject(t, evaluated, intExp)
+		}
 	}
 }
