@@ -24,11 +24,31 @@ func evalBooleanLiteral(obj object.Object) object.Object {
 	return object.NULL
 }
 
-func evalStatements(stmts []ast.Statement) object.Object {
+func evalProgram(stmts []ast.Statement) object.Object {
 	var result object.Object
 	for _, stmt := range stmts {
 		result = Eval(stmt)
+		if result != nil {
+			switch result := result.(type) {
+			case *object.Return:
+				return result.Value
+			}
+		}
 	}
+	return result
+}
+
+func evalBlockStatement(stmts []ast.Statement) object.Object {
+	var result object.Object
+
+	for _, stmt := range stmts {
+		result = Eval(stmt)
+
+		if result != nil && result.Type() == object.RETURN {
+			return result
+		}
+	}
+
 	return result
 }
 
@@ -153,9 +173,14 @@ func evalIfConditionalExpression(ifExpression *ast.IfExpression) object.Object {
 func Eval(node ast.Node) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
-		return evalStatements(node.Statements)
+		return evalProgram(node.Statements)
 	case *ast.BlockStatement:
-		return evalStatements(node.Statements)
+		return evalBlockStatement(node.Statements)
+	case *ast.ReturnStatement:
+		{
+			value := Eval(node.ReturnValue)
+			return &object.Return{Value: value}
+		}
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression)
 	case *ast.PrefixExpression:

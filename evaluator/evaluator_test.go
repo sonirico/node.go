@@ -126,13 +126,15 @@ func TestIfConditionalEval(t *testing.T) {
 		code     string
 		expected interface{}
 	}{
-		{"if (true) {1}", 1},
+		{"if (true) {1;}", 1},
 		{"if (false) {1}", nil},
 		{"if (2 > 0) {null}", nil},
 		{"if (false) {1} else {2}", 2},
 		{"if (false == (1 == 1)) {1} else {2}", 2},
 		{"if (null) {} else {2}", 2},
 		{"if (0) {} else {2}", 2},
+		{"if (true) {return 1;} else {2}", 1},
+		{"if (true) {return;} else {2}", nil},
 	}
 	for _, test := range tests {
 		expected := test.expected
@@ -142,6 +144,42 @@ func TestIfConditionalEval(t *testing.T) {
 		} else {
 			intExp, _ := expected.(int)
 			testIntegerObject(t, evaluated, intExp)
+		}
+	}
+}
+
+func TestReturnStatements(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{"return;", nil},
+		{"9; return 1; 5", 1},
+		{"9; return; 5", nil},
+		{"return 1; 5", 1},
+		{"9; 0; return 2;", 2},
+		{
+			`if (1 > 0) {
+					if (1 > 0) {
+                      return 2;
+				    }
+					return 0;
+                 }`,
+			2,
+		},
+		{
+			"if (1 > 0) {return 2;}; return 0;", 2,
+		},
+	}
+
+	for _, test := range tests {
+		expected := test.expected
+		evaluated := testEval(t, test.input)
+		if nil == expected {
+			testNullObject(t, evaluated)
+		} else {
+			expectedNumber := expected.(int)
+			testIntegerObject(t, evaluated, expectedNumber)
 		}
 	}
 }

@@ -314,7 +314,7 @@ func (p *Parser) parseBlockStatement() ast.BlockStatement {
 	p.nextToken()
 
 	for !p.currentTokenIs(token.RBRACE) {
-		stmt := p.parseExpressionStatement()
+		stmt := p.parseStatement()
 		if stmt != nil {
 			bs.Statements = append(bs.Statements, stmt)
 		}
