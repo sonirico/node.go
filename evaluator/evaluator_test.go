@@ -183,3 +183,38 @@ func TestReturnStatements(t *testing.T) {
 		}
 	}
 }
+
+func TestErrorEvaluation(t *testing.T) {
+	tests := []struct {
+		input                string
+		expectedErrorMessage string
+	}{
+		{
+			"1 == true",
+			"ERROR: Type mismatch. INT == BOOLEAN",
+		},
+		{
+			"true > false",
+			"ERROR: Type mismatch. BOOLEAN > BOOLEAN",
+		},
+		{
+			"true + false",
+			"ERROR: Type mismatch. BOOLEAN + BOOLEAN",
+		},
+		{
+			"true $ false",
+			"ERROR: Unknown operator '$'",
+		},
+	}
+	for _, test := range tests {
+		evaluated := testEval(t, test.input)
+		errorObj, ok := evaluated.(*object.Error)
+		if !ok {
+			t.Fatalf("Expected error, got %q", evaluated)
+		}
+		if errorObj.Message != test.expectedErrorMessage {
+			t.Fatalf("Expected error to be '%s', got '%s'",
+				test.expectedErrorMessage, errorObj.Message)
+		}
+	}
+}

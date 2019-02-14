@@ -12,4 +12,5 @@ const (
 	BOOL           = "BOOLEAN"
 	RETURN         = "RETURN"
 	NULL_TYPE      = "NULL"
+	ERROR          = "ERROR"
 )
