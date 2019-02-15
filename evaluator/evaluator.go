@@ -1,10 +1,19 @@
 package evaluator
 
 import (
+	"fmt"
 	"node.go/ast"
 	"node.go/object"
 	"node.go/token"
 )
+
+func isError(obj object.Object) bool {
+	return obj.Type() == object.ERROR
+}
+
+func newError(message string) object.Object {
+	return object.NewError(message)
+}
 
 func booleanToObject(value bool) object.Object {
 	if value {
@@ -30,6 +39,8 @@ func evalProgram(stmts []ast.Statement) object.Object {
 		result = Eval(stmt)
 		if result != nil {
 			switch result := result.(type) {
+			case *object.Error:
+				return result
 			case *object.Return:
 				return result.Value
 			}
@@ -44,8 +55,13 @@ func evalBlockStatement(stmts []ast.Statement) object.Object {
 	for _, stmt := range stmts {
 		result = Eval(stmt)
 
-		if result != nil && result.Type() == object.RETURN {
-			return result
+		if result != nil {
+			switch result.Type() {
+			case object.RETURN:
+				return result
+			case object.ERROR:
+				return result
+			}
 		}
 	}
 
@@ -54,7 +70,7 @@ func evalBlockStatement(stmts []ast.Statement) object.Object {
 
 func evalMinusOperatorExpression(obj object.Object) object.Object {
 	if obj.Type() != object.INT {
-		return object.NULL
+		return newError(fmt.Sprintf("unknown operator: -%s", obj.Type()))
 	}
 	intObj, _ := obj.(*object.Integer)
 	return &object.Integer{Value: -intObj.Value}
@@ -80,7 +96,7 @@ func evalBangOperatorExpression(obj object.Object) object.Object {
 	case object.NULL_TYPE:
 		return object.TRUE
 	}
-	return object.NULL
+	return newError(fmt.Sprintf("type mismatch: !%s", obj.Type()))
 }
 
 func evalPrefixExpression(operator string, obj object.Object) object.Object {
@@ -90,7 +106,7 @@ func evalPrefixExpression(operator string, obj object.Object) object.Object {
 	case token.BANG:
 		return evalBangOperatorExpression(obj)
 	}
-	return object.NULL
+	return newError(fmt.Sprintf("unknown operator: %s%s", operator, obj.Type()))
 }
 
 func evalInfixIntegerExpression(
@@ -123,6 +139,8 @@ func evalInfixIntegerExpression(
 		return booleanToObject(leftValue <= rightValue)
 	case token.GTE:
 		return booleanToObject(leftValue >= rightValue)
+	default:
+		return newError(fmt.Sprintf("unknown operator: %s%s", operator, object.INT))
 	}
 	return object.NULL
 }
@@ -134,7 +152,8 @@ func evalInfixBooleanExpression(operator string, left object.Object, right objec
 	case token.NOT_EQ:
 		return booleanToObject(left != right)
 	}
-	return object.NULL
+	return newError(fmt.Sprintf("type mismatch: %s %s %s",
+		object.BOOL, operator, object.BOOL))
 }
 
 func evalInfixOperatorExpression(
@@ -144,6 +163,9 @@ func evalInfixOperatorExpression(
 		return evalInfixIntegerExpression(operator, left, right)
 	case left.Type() == object.BOOL && right.Type() == object.BOOL:
 		return evalInfixBooleanExpression(operator, left, right)
+	case left.Type() != right.Type():
+		return newError(fmt.Sprintf("type mismatch: %s %s %s",
+			left.Type(), operator, right.Type()))
 	}
 	return object.NULL
 }
@@ -179,6 +201,9 @@ func Eval(node ast.Node) object.Object {
 	case *ast.ReturnStatement:
 		{
 			value := Eval(node.ReturnValue)
+			if isError(value) {
+				return value
+			}
 			return &object.Return{Value: value}
 		}
 	case *ast.ExpressionStatement:
@@ -187,12 +212,21 @@ func Eval(node ast.Node) object.Object {
 		{
 			operator := node.Operator
 			right := Eval(node.Right)
+			if isError(right) {
+				return right
+			}
 			return evalPrefixExpression(operator, right)
 		}
 	case *ast.InfixExpression:
 		{
 			left := Eval(node.Left)
+			if isError(left) {
+				return left
+			}
 			right := Eval(node.Right)
+			if isError(right) {
+				return right
+			}
 			return evalInfixOperatorExpression(node.Operator, left, right)
 		}
 	case *ast.IfExpression:

@@ -7,10 +7,22 @@ import (
 	"testing"
 )
 
+func checkParserErrors(t *testing.T, p *parser.Parser) {
+	if len(p.Errors()) < 1 {
+		return
+	}
+
+	for _, errorMessage := range p.Errors() {
+		t.Errorf("Parser error: %s", errorMessage)
+	}
+
+	t.FailNow()
+}
 func testEval(t *testing.T, code string) object.Object {
 	lex := lexer.New(code)
 	par := parser.New(lex)
 	prg := par.ParseProgram()
+	checkParserErrors(t, par)
 	if prg == nil {
 		t.Fatalf("Parser.ParseProgram returned nil")
 	}
@@ -22,6 +34,19 @@ func testEval(t *testing.T, code string) object.Object {
 		t.Fatalf("Eval returned nil")
 	}
 	return evaluated
+}
+
+func testErrorObject(t *testing.T, obj object.Object, message string) bool {
+	errorObj, ok := obj.(*object.Error)
+	if !ok {
+		t.Errorf("Object is not Error. Got %q", obj)
+		return false
+	}
+	if errorObj.Message != message {
+		t.Errorf("Error.Message is not '%s'. Got '%s'",
+			message, errorObj.Message)
+	}
+	return true
 }
 
 func testNullObject(t *testing.T, obj object.Object) bool {
@@ -161,10 +186,10 @@ func TestReturnStatements(t *testing.T) {
 		{
 			`if (1 > 0) {
 					if (1 > 0) {
-                      return 2;
+						return 2;
 				    }
 					return 0;
-                 }`,
+               }`,
 			2,
 		},
 		{
@@ -184,37 +209,42 @@ func TestReturnStatements(t *testing.T) {
 	}
 }
 
-func TestErrorEvaluation(t *testing.T) {
+func TestErrorHandling(t *testing.T) {
 	tests := []struct {
 		input                string
 		expectedErrorMessage string
 	}{
 		{
 			"1 == true",
-			"ERROR: Type mismatch. INT == BOOLEAN",
+			"type mismatch: INTEGER == BOOLEAN",
 		},
 		{
 			"true > false",
-			"ERROR: Type mismatch. BOOLEAN > BOOLEAN",
+			"type mismatch: BOOLEAN > BOOLEAN",
 		},
 		{
 			"true + false",
-			"ERROR: Type mismatch. BOOLEAN + BOOLEAN",
+			"type mismatch: BOOLEAN + BOOLEAN",
 		},
 		{
-			"true $ false",
-			"ERROR: Unknown operator '$'",
+			"true - false",
+			"type mismatch: BOOLEAN - BOOLEAN",
+		},
+		{
+			"-true",
+			"unknown operator: -BOOLEAN",
+		},
+		{
+			"1 > (false == 2)",
+			"type mismatch: BOOLEAN == INTEGER",
+		},
+		{
+			"!(true * true)",
+			"type mismatch: BOOLEAN * BOOLEAN",
 		},
 	}
 	for _, test := range tests {
 		evaluated := testEval(t, test.input)
-		errorObj, ok := evaluated.(*object.Error)
-		if !ok {
-			t.Fatalf("Expected error, got %q", evaluated)
-		}
-		if errorObj.Message != test.expectedErrorMessage {
-			t.Fatalf("Expected error to be '%s', got '%s'",
-				test.expectedErrorMessage, errorObj.Message)
-		}
+		testErrorObject(t, evaluated, test.expectedErrorMessage)
 	}
 }
