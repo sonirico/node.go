@@ -39,7 +39,7 @@ func testEval(t *testing.T, code string) object.Object {
 func testErrorObject(t *testing.T, obj object.Object, message string) bool {
 	errorObj, ok := obj.(*object.Error)
 	if !ok {
-		t.Errorf("Object is not Error. Got %q", obj)
+		t.Errorf("Object is not Error. Got %T(%+v)", obj, obj)
 		return false
 	}
 	if errorObj.Message != message {
@@ -220,15 +220,15 @@ func TestErrorHandling(t *testing.T) {
 		},
 		{
 			"true > false",
-			"type mismatch: BOOLEAN > BOOLEAN",
+			"unknown operator: BOOLEAN > BOOLEAN",
 		},
 		{
 			"true + false",
-			"type mismatch: BOOLEAN + BOOLEAN",
+			"unknown operator: BOOLEAN + BOOLEAN",
 		},
 		{
 			"true - false",
-			"type mismatch: BOOLEAN - BOOLEAN",
+			"unknown operator: BOOLEAN - BOOLEAN",
 		},
 		{
 			"-true",
@@ -240,7 +240,19 @@ func TestErrorHandling(t *testing.T) {
 		},
 		{
 			"!(true * true)",
-			"type mismatch: BOOLEAN * BOOLEAN",
+			"unknown operator: BOOLEAN * BOOLEAN",
+		},
+		{
+			`if (true) {
+				if (1 != false) {
+					return 4
+				}
+			}`,
+			"type mismatch: INTEGER != BOOLEAN",
+		},
+		{
+			"false <= 1; return 2;",
+			"type mismatch: BOOLEAN <= INTEGER",
 		},
 	}
 	for _, test := range tests {

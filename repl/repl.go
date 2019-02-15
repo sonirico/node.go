@@ -5,16 +5,29 @@ import (
 	"io"
 	"node.go/evaluator"
 	"node.go/lexer"
+	"node.go/object"
 	"node.go/parser"
 )
 
-const PROMPT = "{o_o} > "
+const (
+	PROMPT      = "(o_o) > "
+	PROMPT_OOPS = "(T_T) >"
+)
+
+func printPrompt(out io.Writer, lastStatusCode byte) {
+	if lastStatusCode < 1 {
+		io.WriteString(out, PROMPT)
+	} else {
+		io.WriteString(out, PROMPT_OOPS)
+	}
+}
 
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
+	var lastStatus byte = 0
 
 	for {
-		io.WriteString(out, PROMPT)
+		printPrompt(out, lastStatus)
 		_ = scanner.Scan()
 
 		line := scanner.Text()
@@ -23,17 +36,22 @@ func Start(in io.Reader, out io.Writer) {
 		program := par.ParseProgram()
 
 		if len(par.Errors()) > 0 {
+			lastStatus = 1
 			for _, errorMessage := range par.Errors() {
 				io.WriteString(out, errorMessage)
 				io.WriteString(out, "\n")
 			}
 			io.WriteString(out, "\n")
-			continue
-		}
-		evaluatedObject := evaluator.Eval(program)
+		} else {
+			evaluatedObject := evaluator.Eval(program)
+			if evaluatedObject.Type() == object.ERROR {
+				lastStatus = 1
+			}
 
-		io.WriteString(out, "\n")
-		io.WriteString(out, evaluatedObject.Inspect())
-		io.WriteString(out, "\n")
+			io.WriteString(out, "\n")
+			io.WriteString(out, evaluatedObject.Inspect())
+			io.WriteString(out, "\n")
+			lastStatus = 0
+		}
 	}
 }

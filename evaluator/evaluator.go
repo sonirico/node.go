@@ -11,8 +11,8 @@ func isError(obj object.Object) bool {
 	return obj.Type() == object.ERROR
 }
 
-func newError(message string) object.Object {
-	return object.NewError(message)
+func newError(template string, params ...interface{}) object.Object {
+	return object.NewError(fmt.Sprintf(template, params...))
 }
 
 func booleanToObject(value bool) object.Object {
@@ -70,7 +70,7 @@ func evalBlockStatement(stmts []ast.Statement) object.Object {
 
 func evalMinusOperatorExpression(obj object.Object) object.Object {
 	if obj.Type() != object.INT {
-		return newError(fmt.Sprintf("unknown operator: -%s", obj.Type()))
+		return newError("unknown operator: -%s", obj.Type())
 	}
 	intObj, _ := obj.(*object.Integer)
 	return &object.Integer{Value: -intObj.Value}
@@ -96,7 +96,7 @@ func evalBangOperatorExpression(obj object.Object) object.Object {
 	case object.NULL_TYPE:
 		return object.TRUE
 	}
-	return newError(fmt.Sprintf("type mismatch: !%s", obj.Type()))
+	return newError("unknown operator: !%s", obj.Type())
 }
 
 func evalPrefixExpression(operator string, obj object.Object) object.Object {
@@ -106,7 +106,7 @@ func evalPrefixExpression(operator string, obj object.Object) object.Object {
 	case token.BANG:
 		return evalBangOperatorExpression(obj)
 	}
-	return newError(fmt.Sprintf("unknown operator: %s%s", operator, obj.Type()))
+	return newError("unknown operator: %s%s", operator, obj.Type())
 }
 
 func evalInfixIntegerExpression(
@@ -140,7 +140,7 @@ func evalInfixIntegerExpression(
 	case token.GTE:
 		return booleanToObject(leftValue >= rightValue)
 	default:
-		return newError(fmt.Sprintf("unknown operator: %s%s", operator, object.INT))
+		return newError("unknown operator: %s%s", operator, object.INT)
 	}
 	return object.NULL
 }
@@ -152,8 +152,7 @@ func evalInfixBooleanExpression(operator string, left object.Object, right objec
 	case token.NOT_EQ:
 		return booleanToObject(left != right)
 	}
-	return newError(fmt.Sprintf("type mismatch: %s %s %s",
-		object.BOOL, operator, object.BOOL))
+	return newError("unknown operator: %s %s %s", object.BOOL, operator, object.BOOL)
 }
 
 func evalInfixOperatorExpression(
@@ -164,10 +163,9 @@ func evalInfixOperatorExpression(
 	case left.Type() == object.BOOL && right.Type() == object.BOOL:
 		return evalInfixBooleanExpression(operator, left, right)
 	case left.Type() != right.Type():
-		return newError(fmt.Sprintf("type mismatch: %s %s %s",
-			left.Type(), operator, right.Type()))
+		return newError("type mismatch: %s %s %s", left.Type(), operator, right.Type())
 	}
-	return object.NULL
+	return newError("unsupported types: %s %s %s", left.Type(), operator, right.Type())
 }
 
 func isTruthy(obj object.Object) bool {
@@ -183,6 +181,9 @@ func isTruthy(obj object.Object) bool {
 
 func evalIfConditionalExpression(ifExpression *ast.IfExpression) object.Object {
 	evaluatedCondition := Eval(ifExpression.Condition)
+	if isError(evaluatedCondition) {
+		return evaluatedCondition
+	}
 	if isTruthy(evaluatedCondition) {
 		return Eval(&ifExpression.Consequence)
 	}
