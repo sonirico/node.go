@@ -29,7 +29,8 @@ func testEval(t *testing.T, code string) object.Object {
 	if len(prg.Statements) < 1 {
 		t.Fatalf("ast.Program has got no nodes")
 	}
-	evaluated := Eval(prg)
+	environment := object.NewEnvironment()
+	evaluated := Eval(prg, environment)
 	if evaluated == nil {
 		t.Fatalf("Eval returned nil")
 	}
@@ -139,7 +140,7 @@ func TestEvalBooleanObject(t *testing.T) {
 }
 
 func TestEvalNullObject(t *testing.T) {
-	tests := []string{"null", "1 / 0"}
+	tests := []string{"1 / 0"}
 	for _, test := range tests {
 		evaluated := testEval(t, test)
 		testNullObject(t, evaluated)
@@ -153,10 +154,9 @@ func TestIfConditionalEval(t *testing.T) {
 	}{
 		{"if (true) {1;}", 1},
 		{"if (false) {1}", nil},
-		{"if (2 > 0) {null}", nil},
+		{"if (2 > 0) {1}", 1},
 		{"if (false) {1} else {2}", 2},
 		{"if (false == (1 == 1)) {1} else {2}", 2},
-		{"if (null) {} else {2}", 2},
 		{"if (0) {} else {2}", 2},
 		{"if (true) {return 1;} else {2}", 1},
 		{"if (true) {return;} else {2}", nil},
@@ -254,9 +254,38 @@ func TestErrorHandling(t *testing.T) {
 			"false <= 1; return 2;",
 			"type mismatch: BOOLEAN <= INTEGER",
 		},
+		{
+			"a + 1;",
+			"reference error: a is not defined",
+		},
+		{
+			"let b = a * 3",
+			"reference error: a is not defined",
+		},
 	}
 	for _, test := range tests {
 		evaluated := testEval(t, test.input)
 		testErrorObject(t, evaluated, test.expectedErrorMessage)
+	}
+}
+
+func TestLetStatements(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int
+	}{
+		{
+			"let a = 1; a;",
+			1,
+		},
+		{
+			"let a = 1; let b = a - 2; b;",
+			-1,
+		},
+	}
+
+	for _, test := range tests {
+		evaluated := testEval(t, test.input)
+		testIntegerObject(t, evaluated, test.expected)
 	}
 }

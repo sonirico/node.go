@@ -25,6 +25,7 @@ func printPrompt(out io.Writer, lastStatusCode byte) {
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
 	var lastStatus byte = 0
+	var environment = object.NewEnvironment()
 
 	for {
 		printPrompt(out, lastStatus)
@@ -43,7 +44,7 @@ func Start(in io.Reader, out io.Writer) {
 			}
 			io.WriteString(out, "\n")
 		} else {
-			evaluatedObject := evaluator.Eval(program)
+			evaluatedObject := evaluator.Eval(program, environment)
 			if evaluatedObject.Type() == object.ERROR {
 				lastStatus = 1
 			}
