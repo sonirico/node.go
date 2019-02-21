@@ -693,3 +693,31 @@ func TestCallExpression(t *testing.T) {
 	}
 
 }
+
+func TestCallExpressionNoArgs(t *testing.T) {
+	input := `sum()`
+	lex := lexer.New(input)
+	par := New(lex)
+	prg := par.ParseProgram()
+	checkProgram(t, prg)
+	stmt := testExpressionStatement(t, prg.Statements[0])
+	callExp, ok := stmt.Expression.(*ast.CallExpression)
+	if !ok {
+		t.Fatalf("expression expected to be CallExpression. Got %q", stmt.Expression)
+	}
+
+	testLiteralExpression(t, callExp.Function, "sum")
+
+	expectedParameters := make([]int, 0)
+
+	if len(expectedParameters) != len(callExp.Arguments) {
+		t.Fatalf("CallExpression expected to have %d parameters. Got %d",
+			len(expectedParameters), len(callExp.Arguments))
+	}
+
+	for index, expParam := range expectedParameters {
+		actualParam := callExp.Arguments[index]
+		testLiteralExpression(t, actualParam, expParam)
+	}
+
+}
