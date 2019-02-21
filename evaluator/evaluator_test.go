@@ -76,6 +76,9 @@ func testIntegerObject(t *testing.T, obj object.Object, expected int) bool {
 	integer, ok := obj.(*object.Integer)
 	if !ok {
 		t.Errorf("Object is not Integer. Got %s", obj.Type())
+		if obj.Type() == object.ERROR {
+			t.Errorf("The error is %s", obj.Inspect())
+		}
 		return false
 	}
 	if expected != int(integer.Value) {
@@ -262,6 +265,10 @@ func TestErrorHandling(t *testing.T) {
 			"let b = a * 3",
 			"reference error: a is not defined",
 		},
+		{
+			"let f = fn(x, y) {a + y} (1, 2)",
+			"reference error: a is not defined",
+		},
 	}
 	for _, test := range tests {
 		evaluated := testEval(t, test.input)
@@ -286,6 +293,91 @@ func TestLetStatements(t *testing.T) {
 
 	for _, test := range tests {
 		evaluated := testEval(t, test.input)
+		testIntegerObject(t, evaluated, test.expected)
+	}
+}
+
+func TestFunctionObject(t *testing.T) {
+	code := "fn (x) { x + 2;}"
+	evaluated := testEval(t, code)
+	evalFunc, ok := evaluated.(*object.Function)
+	if !ok {
+		t.Fatalf("evalFunc is not an object.Function. Got %T(%+v)", evaluated, evaluated)
+	}
+	if len(evalFunc.Parameters) != 1 {
+		t.Fatalf("function expected to have %d params. Got %d", 2, len(evalFunc.Parameters))
+	}
+	if evalFunc.Parameters[0].String() != "x" {
+		t.Fatalf("parameter expected to be '%s'. Got '%s'", "x", evalFunc.Parameters[0].String())
+	}
+	expectedBody := "{(x + 2)}"
+	if expectedBody != evalFunc.Body.String() {
+		t.Fatalf("function expected to have body equal to '%s'. Got '%s'",
+			expectedBody, evalFunc.Body.String())
+	}
+}
+
+func TestFunctionApplication(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected int
+	}{
+		{
+			`let identity = fn (x) {x}; identity(1);`,
+			1,
+		},
+		{
+			`let double = fn (x) {x * 2}; double(2); 4`,
+			4,
+		},
+		{
+			`let add = fn (a, b) {a + b}; add(add(1, 3), add(-1, -3))`,
+			0,
+		},
+		{
+			`fn(a, b){a + b}(1, 2);`,
+			3,
+		},
+		{
+			`
+			let a = fn (x) {
+				let b = fn (y) {
+					return y * 2
+				}
+				return x + b(x)
+			}
+			a(2);
+			`,
+			6,
+		},
+	}
+
+	for _, test := range tests {
+		evaluated := testEval(t, test.code)
+		testIntegerObject(t, evaluated, test.expected)
+	}
+}
+
+func TestFunctionClosures(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected int
+	}{
+		{
+			`
+			let sumGenerator = fn (left) {
+				return fn (y) { left + y }
+			}
+		
+			let addTwo = sumGenerator(2);
+			addTwo(4)
+			`,
+			6,
+		},
+	}
+
+	for _, test := range tests {
+		evaluated := testEval(t, test.code)
 		testIntegerObject(t, evaluated, test.expected)
 	}
 }
