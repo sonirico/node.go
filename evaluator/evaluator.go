@@ -193,6 +193,47 @@ func evalIfConditionalExpression(ifExpression *ast.IfExpression, env *object.Env
 	return object.NULL
 }
 
+func evalExpressions(expressions []ast.Expression, env *object.Environment) []object.Object {
+	var result []object.Object
+
+	for _, expression := range expressions {
+		argument := Eval(expression, env)
+		if isError(argument) {
+			return []object.Object{argument}
+		}
+		result = append(result, argument)
+	}
+
+	return result
+}
+
+func applyFunction(function object.Object, arguments []object.Object) object.Object {
+	funcObj, ok := function.(*object.Function)
+	if !ok {
+		return newError("not a function")
+	}
+	extendedEnv := extendFunctionEnvironment(funcObj, arguments)
+	funcResult := evalBlockStatement(funcObj.Body.Statements, extendedEnv)
+	return unwrapReturnValue(funcResult)
+}
+
+func extendFunctionEnvironment(function *object.Function, arguments []object.Object) *object.Environment {
+	extendedEnv := object.NewEnclosedEnvironment(function.Env)
+	// TODO: Check if arguments are less than actual Parameters
+	for index, param := range function.Parameters {
+		extendedEnv.Set(param.Value, arguments[index])
+	}
+	return extendedEnv
+}
+
+func unwrapReturnValue(result object.Object) object.Object {
+	if result.Type() == object.RETURN {
+		returnVal, _ := result.(*object.Return)
+		return returnVal.Value
+	}
+	return result
+}
+
 func Eval(node ast.Node, env *object.Environment) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
@@ -246,12 +287,27 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			}
 			return evalInfixOperatorExpression(node.Operator, left, right)
 		}
+	case *ast.CallExpression:
+		{
+			evalFunc := Eval(node.Function, env)
+			if isError(evalFunc) {
+				return evalFunc
+			}
+			evalArgs := evalExpressions(node.Arguments, env)
+			if len(evalArgs) == 1 && isError(evalArgs[0]) {
+				return evalArgs[0]
+			}
+
+			return applyFunction(evalFunc, evalArgs)
+		}
 	case *ast.IfExpression:
 		return evalIfConditionalExpression(node, env)
 	case *ast.IntegerLiteral:
 		return object.NewInteger(node.Value)
 	case *ast.BooleanLiteral:
 		return booleanToObject(node.Value)
+	case *ast.FunctionLiteral:
+		return object.NewFunction(node.Parameters, node.Body, env)
 	}
 
 	return object.NULL

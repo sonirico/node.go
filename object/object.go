@@ -13,4 +13,5 @@ const (
 	RETURN         = "RETURN"
 	NULL_TYPE      = "NULL"
 	ERROR          = "ERROR"
+	FUNCTION       = "FUNCTION"
 )
