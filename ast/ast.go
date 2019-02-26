@@ -288,6 +288,22 @@ func (il *IntegerLiteral) String() string {
 	return il.Token.Literal
 }
 
+// String literal
+type StringLiteral struct {
+	Token token.Token
+
+	Value string
+}
+
+func (sl *StringLiteral) expressionNode() {}
+func (sl *StringLiteral) TokenLiteral() string {
+	return sl.Token.Literal
+}
+func (sl *StringLiteral) String() string {
+	return fmt.Sprintf(`\"%s\"`, sl.Value)
+}
+
+// Call expression
 type CallExpression struct {
 	Token token.Token
 

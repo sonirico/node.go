@@ -88,6 +88,22 @@ func testIntegerObject(t *testing.T, obj object.Object, expected int) bool {
 	return true
 }
 
+func testStringObject(t *testing.T, obj object.Object, expected string) bool {
+	stringObj, ok := obj.(*object.String)
+	if !ok {
+		t.Errorf("Object is not String. Got %s", obj.Type())
+		if obj.Type() == object.ERROR {
+			t.Errorf("The error is %s", obj.Inspect())
+		}
+		return false
+	}
+	if expected != stringObj.Value {
+		t.Errorf("String.Value is not %s. Got %s", expected, stringObj.Value)
+		return false
+	}
+	return true
+}
+
 func TestEvalIntegerObject(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -106,6 +122,33 @@ func TestEvalIntegerObject(t *testing.T) {
 	for _, test := range tests {
 		evaluated := testEval(t, test.input)
 		testIntegerObject(t, evaluated, test.expected)
+	}
+}
+
+func TestEvalStringObject(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{`"I am a spoon";`, "I am a spoon"},
+		{`"0"`, "0"},
+	}
+	for _, test := range tests {
+		evaluated := testEval(t, test.input)
+		testStringObject(t, evaluated, test.expected)
+	}
+}
+
+func TestEvalStringConcatenation(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{`let a = "Hello";let b = " world!"; let c = a + b; c;`, "Hello world!"},
+	}
+	for _, test := range tests {
+		evaluated := testEval(t, test.input)
+		testStringObject(t, evaluated, test.expected)
 	}
 }
 
@@ -268,6 +311,10 @@ func TestErrorHandling(t *testing.T) {
 		{
 			"let f = fn(x, y) {a + y} (1, 2)",
 			"reference error: a is not defined",
+		},
+		{
+			`"hello" - "world"`,
+			"unknown operator: STRING - STRING",
 		},
 	}
 	for _, test := range tests {

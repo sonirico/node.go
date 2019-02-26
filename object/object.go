@@ -10,6 +10,7 @@ type Object interface {
 const (
 	INT       Type = "INTEGER"
 	BOOL           = "BOOLEAN"
+	STRING         = "STRING"
 	RETURN         = "RETURN"
 	NULL_TYPE      = "NULL"
 	ERROR          = "ERROR"

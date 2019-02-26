@@ -70,6 +70,11 @@ func (l *Lexer) NextToken() token.Token {
 	case ';':
 		tok = newToken(token.SEMICOLON, l.currentChar)
 		break
+	case '"':
+		l.readChar()
+		tok.Type = token.STRING
+		tok.Literal = l.readString()
+		break
 	// Operators
 	case '<':
 		{
@@ -174,6 +179,16 @@ func (l *Lexer) readWord() string {
 	for isLetter(l.currentChar) {
 		l.readChar()
 	}
+	return l.input[pos:l.currentPosition]
+}
+
+func (l *Lexer) readString() string {
+	pos := l.currentPosition
+
+	for l.currentChar != '"' {
+		l.readChar()
+	}
+
 	return l.input[pos:l.currentPosition]
 }
 

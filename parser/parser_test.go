@@ -7,6 +7,14 @@ import (
 	"testing"
 )
 
+func testParser(t *testing.T, code string) *ast.Program {
+	lex := lexer.New(code)
+	par := New(lex)
+	program := par.ParseProgram()
+	checkParserErrors(t, par)
+	return program
+}
+
 func checkProgram(t *testing.T, p *ast.Program) {
 	if p == nil {
 		t.Fatalf("Parser.ParseProgram returned nil")
@@ -101,7 +109,14 @@ func testLiteralExpression(t *testing.T, actual ast.Expression, expected interfa
 	case int:
 		return testIntegerLiteralExpression(t, actual, int64(value))
 	case string:
-		return testIdentifier(t, actual, value)
+		{
+			switch actual.(type) {
+			case *ast.StringLiteral:
+				return testStringLiteral(t, actual, value)
+			default:
+				return testIdentifier(t, actual, value)
+			}
+		}
 	case bool:
 		return testBooleanLiteralExpression(t, actual, value)
 	}
@@ -365,6 +380,32 @@ func TestIntegerLiteralExpression(t *testing.T) {
 	testIntegerLiteralExpression(t, stmt.Expression, 2)
 }
 
+func testStringLiteral(t *testing.T, exp ast.Expression, expected string) bool {
+	stringExp, ok := exp.(*ast.StringLiteral)
+	if !ok {
+		t.Errorf("Expected expression to be StringLiteral, got %q instead", exp)
+		return false
+	}
+	if stringExp.Value != expected {
+		t.Errorf("StringLiteral.Value is not '%s'. Got '%s'", expected, stringExp.Value)
+		return false
+	}
+	return true
+}
+
+func TestStringLiteralExpression(t *testing.T) {
+	input := `"I am a fork";1;`
+	program := testParser(t, input)
+	if len(program.Statements) < 1 {
+		t.Fatalf("Parse string got no statements, expected %d", 1)
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt is not *ast.ExpressionStatement. Got '%q' instead.", stmt)
+	}
+	testStringLiteral(t, stmt.Expression, "I am a fork")
+}
+
 func TestPrefixExpression(t *testing.T) {
 	tests := []struct {
 		input            string
@@ -428,6 +469,7 @@ func TestInfixExpression(t *testing.T) {
 		{"1 <= 2", 1, "<=", 2},
 		{"1 == 2", 1, "==", 2},
 		{"1 != 2", 1, "!=", 2},
+		{`"hello " + "world"`, "hello ", "+", "world"},
 	}
 
 	for _, test := range tests {
@@ -719,5 +761,4 @@ func TestCallExpressionNoArgs(t *testing.T) {
 		actualParam := callExp.Arguments[index]
 		testLiteralExpression(t, actualParam, expParam)
 	}
-
 }
