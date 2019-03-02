@@ -210,6 +210,16 @@ func evalIfConditionalExpression(ifExpression *ast.IfExpression, env *object.Env
 	return object.NULL
 }
 
+func evalIdentifierExpression(ident *ast.Identifier, env *object.Environment) object.Object {
+	if value, ok := env.Get(ident.Value); ok {
+		return value
+	}
+	if builtin, ok := object.LookUpBuiltin(ident.Value); ok {
+		return builtin
+	}
+	return newError("reference error: %s is not defined", ident.Value)
+}
+
 func evalExpressions(expressions []ast.Expression, env *object.Environment) []object.Object {
 	var result []object.Object
 
@@ -225,13 +235,15 @@ func evalExpressions(expressions []ast.Expression, env *object.Environment) []ob
 }
 
 func applyFunction(function object.Object, arguments []object.Object) object.Object {
-	funcObj, ok := function.(*object.Function)
-	if !ok {
-		return newError("not a function")
+	if funcObj, ok := function.(*object.Function); ok {
+		extendedEnv := extendFunctionEnvironment(funcObj, arguments)
+		funcResult := evalBlockStatement(funcObj.Body.Statements, extendedEnv)
+		return unwrapReturnValue(funcResult)
 	}
-	extendedEnv := extendFunctionEnvironment(funcObj, arguments)
-	funcResult := evalBlockStatement(funcObj.Body.Statements, extendedEnv)
-	return unwrapReturnValue(funcResult)
+	if builtin, ok := function.(*object.Builtin); ok {
+		return builtin.Fn(arguments...)
+	}
+	return newError("not a function")
 }
 
 func extendFunctionEnvironment(function *object.Function, arguments []object.Object) *object.Environment {
@@ -266,13 +278,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			env.Set(node.Name.Value, value)
 		}
 	case *ast.Identifier:
-		{
-			value, ok := env.Get(node.Value)
-			if !ok {
-				return newError("reference error: %s is not defined", node.Value)
-			}
-			return value
-		}
+		return evalIdentifierExpression(node, env)
 	case *ast.ReturnStatement:
 		{
 			value := Eval(node.ReturnValue, env)

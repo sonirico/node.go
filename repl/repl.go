@@ -47,12 +47,12 @@ func Start(in io.Reader, out io.Writer) {
 			evaluatedObject := evaluator.Eval(program, environment)
 			if evaluatedObject.Type() == object.ERROR {
 				lastStatus = 1
+			} else {
+				lastStatus = 0
 			}
-
 			io.WriteString(out, "\n")
 			io.WriteString(out, evaluatedObject.Inspect())
 			io.WriteString(out, "\n")
-			lastStatus = 0
 		}
 	}
 }

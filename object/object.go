@@ -15,4 +15,5 @@ const (
 	NULL_TYPE      = "NULL"
 	ERROR          = "ERROR"
 	FUNCTION       = "FUNCTION"
+	BFUNCTION      = "BUILTIN FUNCTION"
 )

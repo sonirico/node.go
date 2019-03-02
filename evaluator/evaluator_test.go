@@ -316,6 +316,18 @@ func TestErrorHandling(t *testing.T) {
 			`"hello" - "world"`,
 			"unknown operator: STRING - STRING",
 		},
+		{
+			`len()`,
+			"Type error: Expected 1 argument. Got 0",
+		},
+		{
+			`len(1, 2)`,
+			"Type error: Expected 1 argument. Got 2",
+		},
+		{
+			`len(1)`,
+			"Type mismatch: Expected STRING. Got INTEGER",
+		},
 	}
 	for _, test := range tests {
 		evaluated := testEval(t, test.input)
@@ -421,6 +433,22 @@ func TestFunctionClosures(t *testing.T) {
 			`,
 			6,
 		},
+	}
+
+	for _, test := range tests {
+		evaluated := testEval(t, test.code)
+		testIntegerObject(t, evaluated, test.expected)
+	}
+}
+
+func TestLenBuiltinFunction(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected int
+	}{
+		{`len(" hello   there ")`, 15},
+		{`len("")`, 0},
+		{`len(fn (x) { "I ve " + x + " eyes"} ("2"))`, 11},
 	}
 
 	for _, test := range tests {
