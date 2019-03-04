@@ -70,6 +70,12 @@ func (l *Lexer) NextToken() token.Token {
 	case ';':
 		tok = newToken(token.SEMICOLON, l.currentChar)
 		break
+	case '[':
+		tok = newToken(token.LBRACKET, l.currentChar)
+		break
+	case ']':
+		tok = newToken(token.RBRACKET, l.currentChar)
+		break
 	case '"':
 		l.readChar()
 		tok.Type = token.STRING
