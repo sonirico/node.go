@@ -333,6 +333,32 @@ func (ce *CallExpression) String() string {
 	return buffer.String()
 }
 
+// ARRAY LITERAL
+type ArrayLiteral struct {
+	Token token.Token
+
+	Items []Expression
+}
+
+func (al *ArrayLiteral) expressionNode() {}
+func (al *ArrayLiteral) TokenLiteral() string {
+	return al.Token.Literal
+}
+func (al *ArrayLiteral) String() string {
+	var out bytes.Buffer
+	var items []string
+
+	for _, item := range al.Items {
+		items = append(items, item.String())
+	}
+
+	out.WriteString("[")
+	out.WriteString(strings.Join(items, ", "))
+	out.WriteString("]")
+
+	return out.String()
+}
+
 // PROGRAM - The root node!
 type Program struct {
 	Statements []Statement

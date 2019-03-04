@@ -762,3 +762,39 @@ func TestCallExpressionNoArgs(t *testing.T) {
 		testLiteralExpression(t, actualParam, expParam)
 	}
 }
+
+func testArrayLiteral(t *testing.T, actual ast.Expression, expected []int64) bool {
+	arr, ok := actual.(*ast.ArrayLiteral)
+	if !ok {
+		t.Errorf("Expression is not ArrayLiteral. Got %T(%+v)", actual, actual)
+		return false
+	}
+	if len(expected) != len(arr.Items) {
+		t.Errorf("ArrayLiteral expected to have %d elements. Got %d",
+			len(expected), len(arr.Items))
+		return false
+	}
+	for index, expected := range expected {
+		if !testIntegerLiteralExpression(t, arr.Items[index], expected) {
+			return false
+		}
+	}
+	return true
+}
+
+func TestArrayLiteralExpression(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected []int64
+	}{
+		{"[0, 1, 4]", []int64{0, 1, 4}},
+		{"[]", []int64{}},
+	}
+
+	for _, test := range tests {
+		//expected := []int64{0, 1, 4}
+		program := testParser(t, test.code)
+		stmt := testExpressionStatement(t, program.Statements[0])
+		testArrayLiteral(t, stmt.Expression, test.expected)
+	}
+}

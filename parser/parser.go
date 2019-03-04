@@ -85,6 +85,7 @@ func New(lexer *lexer.Lexer) *Parser {
 	parser.registerPrefixFunction(token.BANG, parser.parsePrefixExpression)
 	parser.registerPrefixFunction(token.MINUS, parser.parsePrefixExpression)
 	parser.registerPrefixFunction(token.LPAREN, parser.parseGroupedExpression)
+	parser.registerPrefixFunction(token.LBRACKET, parser.parseArrayLiteral)
 	parser.registerPrefixFunction(token.IF, parser.parseIfExpression)
 	parser.registerPrefixFunction(token.FUNC, parser.parseFunctionExpression)
 
@@ -414,32 +415,43 @@ func (p *Parser) parseFunctionExpression() ast.Expression {
 	return funcExp
 }
 
-func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
-	callExp := &ast.CallExpression{Token: p.currentToken, Function: function}
-	callExp.Arguments = []ast.Expression{}
+func (p *Parser) parseArrayLiteral() ast.Expression {
+	arrayLiteral := &ast.ArrayLiteral{Token: p.currentToken}
 
-	if !p.currentTokenIs(token.LPAREN) {
-		return nil
-	}
+	arrayLiteral.Items = p.parseExpressionList(token.RBRACKET)
 
-	if p.peekTokenIs(token.RPAREN) {
+	return arrayLiteral
+}
+
+func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
+	var expressionList []ast.Expression
+
+	if p.peekTokenIs(end) {
 		p.nextToken()
-		return callExp
+		return expressionList
 	}
 
 	p.nextToken()
 
-	callExp.Arguments = append(callExp.Arguments, p.parseExpression(LOWEST))
+	expressionList = append(expressionList, p.parseExpression(LOWEST))
 
 	for p.peekTokenIs(token.COMMA) {
 		p.nextToken()
 		p.nextToken()
-		callExp.Arguments = append(callExp.Arguments, p.parseExpression(LOWEST))
+		expressionList = append(expressionList, p.parseExpression(LOWEST))
 	}
 
-	if !p.expectPeekToken(token.RPAREN) {
+	if !p.expectPeekToken(end) {
 		return nil
 	}
+
+	return expressionList
+}
+
+func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	callExp := &ast.CallExpression{Token: p.currentToken, Function: function}
+
+	callExp.Arguments = p.parseExpressionList(token.RPAREN)
 
 	return callExp
 }
