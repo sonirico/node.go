@@ -17,11 +17,13 @@ var builtins = map[string]*Builtin{
 				return NewError(fmt.Sprintf("Type error: Expected 1 argument. Got %d",
 					len(arguments)))
 			}
-			strObject, ok := arguments[0].(*String)
-			if !ok {
-				return NewError(fmt.Sprintf("Type mismatch: Expected %s. Got %s", STRING, arguments[0].Type()))
+			switch obj := arguments[0].(type) {
+			case *String:
+				return NewInteger(int64(len(obj.Value)))
+			case *Array:
+				return NewInteger(int64(len(obj.Items)))
 			}
-			return NewInteger(int64(len(strObject.Value)))
+			return NewError(fmt.Sprintf("type mismatch: Expected STRING or ARRAY. Got %s", arguments[0].Type()))
 		},
 	},
 }

@@ -358,7 +358,7 @@ func TestErrorHandling(t *testing.T) {
 		},
 		{
 			`len(1)`,
-			"Type mismatch: Expected STRING. Got INTEGER",
+			"type mismatch: Expected STRING or ARRAY. Got INTEGER",
 		},
 		{
 			`true[0]`,
@@ -477,6 +477,9 @@ func TestLenBuiltinFunction(t *testing.T) {
 		{`len(" hello   there ")`, 15},
 		{`len("")`, 0},
 		{`len(fn (x) { "I ve " + x + " eyes"} ("2"))`, 11},
+		{`len([])`, 0},
+		{`len([1])`, 1},
+		{`len([1, 2])`, 2},
 	}
 
 	for _, test := range tests {
