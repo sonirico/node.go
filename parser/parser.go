@@ -20,6 +20,7 @@ const (
 	POWER       // ^
 	PREFIX      // ! or -
 	CALL        // add(1, 2)
+	INDEX       // getArray()[2]
 )
 
 var precedences = map[token.TokenType]int{
@@ -36,6 +37,7 @@ var precedences = map[token.TokenType]int{
 	token.SLASH:    PRODUCT,
 	token.POWER:    POWER,
 	token.LPAREN:   CALL,
+	token.LBRACKET: INDEX,
 }
 
 func getPrecedence(tokenType token.TokenType) int {
@@ -104,6 +106,7 @@ func New(lexer *lexer.Lexer) *Parser {
 	parser.registerInfixFunction(token.GTE, parser.parseInfixExpression)
 	parser.registerInfixFunction(token.PERCENT, parser.parseInfixExpression)
 	parser.registerInfixFunction(token.LPAREN, parser.parseCallExpression)
+	parser.registerInfixFunction(token.LBRACKET, parser.parseIndexExpression)
 
 	return parser
 }
@@ -454,6 +457,20 @@ func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	callExp.Arguments = p.parseExpressionList(token.RPAREN)
 
 	return callExp
+}
+
+func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
+	indexExpression := &ast.IndexExpression{Container: left}
+
+	p.nextToken()
+
+	indexExpression.Index = p.parseExpression(LOWEST)
+
+	if !p.expectPeekToken(token.RBRACKET) {
+		return nil
+	}
+
+	return indexExpression
 }
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {

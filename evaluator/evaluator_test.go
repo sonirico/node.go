@@ -360,6 +360,14 @@ func TestErrorHandling(t *testing.T) {
 			`len(1)`,
 			"Type mismatch: Expected STRING. Got INTEGER",
 		},
+		{
+			`true[0]`,
+			"type error: BOOLEAN cannot be used as index expression",
+		},
+		{
+			`[1][true]`,
+			"type error: BOOLEAN cannot be used as index of ARRAY",
+		},
 	}
 	for _, test := range tests {
 		evaluated := testEval(t, test.input)
@@ -513,5 +521,45 @@ func TestArrayLiteralEvaluation(t *testing.T) {
 	for _, test := range tests {
 		evaluated := testEval(t, test.code)
 		testArrayObject(t, evaluated, test.assertions)
+	}
+}
+
+func TestIndexExpressionEvaluation(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected interface{}
+	}{
+		{
+			`[1, 2 * 3, fn(n){n - 1}(1)][2]`,
+			0,
+		},
+		{
+			`let array = [1, 2 * 3, fn(n){n - 1}(1)]; array[2]`,
+			0,
+		},
+		{
+			`let getArray = fn () {
+				return [1, 2 * 3, fn(n){n - 1}(1)]
+			};
+			getArray()[1];
+			`,
+			6,
+		},
+		{
+			"[1][1]",
+			nil,
+		},
+	}
+	for _, test := range tests {
+		evaluated := testEval(t, test.code)
+		switch exp := test.expected.(type) {
+		case nil:
+			testNullObject(t, evaluated)
+		case int:
+			if !testIntegerObject(t, evaluated, exp) {
+				t.Fatalf("expected IndexExpression to return %d. Got %s",
+					test.expected, evaluated.Type())
+			}
+		}
 	}
 }
