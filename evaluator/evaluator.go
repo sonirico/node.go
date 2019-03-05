@@ -333,6 +333,12 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return object.NewFunction(node.Parameters, node.Body, env)
 	case *ast.StringLiteral:
 		return object.NewString(node.Value)
+	case *ast.ArrayLiteral:
+		evalItems := evalExpressions(node.Items, env)
+		if len(evalItems) == 1 && isError(evalItems[0]) {
+			return evalItems[0]
+		}
+		return object.NewArray(evalItems)
 	}
 
 	return object.NULL

@@ -104,6 +104,38 @@ func testStringObject(t *testing.T, obj object.Object, expected string) bool {
 	return true
 }
 
+func testFunctionObject(t *testing.T, evaluated object.Object, arguments []string, body string) bool {
+	fn, ok := evaluated.(*object.Function)
+	if !ok {
+		t.Errorf("function is not an object.Function. Got %T(%+v)", evaluated, evaluated)
+		return false
+	}
+	if len(fn.Parameters) != len(arguments) {
+		t.Errorf("function expected to have %d params. Got %d", len(arguments), len(fn.Parameters))
+		return false
+	}
+	for index, argument := range arguments {
+		if fn.Parameters[index].String() != argument {
+			t.Errorf("parameter expected to be '%s'. Got '%s'", argument, fn.Parameters[index].String())
+			return false
+		}
+	}
+	if fn.Body.String() != body {
+		t.Errorf("function expected to have body equal to '%s'. Got '%s'",
+			body, fn.Body.String())
+		return false
+	}
+	return true
+}
+
+func testArrayObject(t *testing.T, evaluated object.Object, assertions func(array *object.Array)) {
+	arr, ok := evaluated.(*object.Array)
+	if !ok {
+		t.Fatalf("expected Array. Got %T(%+v)", evaluated, evaluated)
+	}
+	assertions(arr)
+}
+
 func TestEvalIntegerObject(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -359,21 +391,9 @@ func TestLetStatements(t *testing.T) {
 func TestFunctionObject(t *testing.T) {
 	code := "fn (x) { x + 2;}"
 	evaluated := testEval(t, code)
-	evalFunc, ok := evaluated.(*object.Function)
-	if !ok {
-		t.Fatalf("evalFunc is not an object.Function. Got %T(%+v)", evaluated, evaluated)
-	}
-	if len(evalFunc.Parameters) != 1 {
-		t.Fatalf("function expected to have %d params. Got %d", 2, len(evalFunc.Parameters))
-	}
-	if evalFunc.Parameters[0].String() != "x" {
-		t.Fatalf("parameter expected to be '%s'. Got '%s'", "x", evalFunc.Parameters[0].String())
-	}
+	expectedParams := []string{"x"}
 	expectedBody := "{(x + 2)}"
-	if expectedBody != evalFunc.Body.String() {
-		t.Fatalf("function expected to have body equal to '%s'. Got '%s'",
-			expectedBody, evalFunc.Body.String())
-	}
+	testFunctionObject(t, evaluated, expectedParams, expectedBody)
 }
 
 func TestFunctionApplication(t *testing.T) {
@@ -454,5 +474,44 @@ func TestLenBuiltinFunction(t *testing.T) {
 	for _, test := range tests {
 		evaluated := testEval(t, test.code)
 		testIntegerObject(t, evaluated, test.expected)
+	}
+}
+
+func TestArrayLiteralEvaluation(t *testing.T) {
+	tests := []struct {
+		code       string
+		assertions func(*object.Array)
+	}{
+		{
+			`[true, 1, "hey", fn(){}]`,
+			func(arr *object.Array) {
+				if len(arr.Items) != 4 {
+					t.Fatalf("expected Array to have %d items. Got %d", 4, len(arr.Items))
+				}
+				testBooleanObject(t, arr.Items[0], true)
+				testIntegerObject(t, arr.Items[1], 1)
+				testStringObject(t, arr.Items[2], "hey")
+				testFunctionObject(t, arr.Items[3], []string{}, "{}")
+			},
+		},
+		{
+			`[]`,
+			func(arr *object.Array) {},
+		},
+		{
+			`let f = fn(z){z * z}; [f(-2), fn(x, y){x + y}("a", "b")]`,
+			func(arr *object.Array) {
+				if len(arr.Items) != 2 {
+					t.Fatalf("expected Array to have %d items. Got %d", 4, len(arr.Items))
+				}
+				testIntegerObject(t, arr.Items[0], 4)
+				testStringObject(t, arr.Items[1], "ab")
+			},
+		},
+	}
+
+	for _, test := range tests {
+		evaluated := testEval(t, test.code)
+		testArrayObject(t, evaluated, test.assertions)
 	}
 }
