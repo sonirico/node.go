@@ -368,6 +368,18 @@ func TestErrorHandling(t *testing.T) {
 			`[1][true]`,
 			"type error: BOOLEAN cannot be used as index of ARRAY",
 		},
+		{
+			`head()`,
+			"type error: Expected 1 argument. Got 0",
+		},
+		{
+			`head([1, 2], 1)`,
+			"type error: Expected 1 argument. Got 2",
+		},
+		{
+			`head(true)`,
+			"type mismatch: Expected ARRAY. Got BOOLEAN",
+		},
 	}
 	for _, test := range tests {
 		evaluated := testEval(t, test.input)
@@ -469,6 +481,8 @@ func TestFunctionClosures(t *testing.T) {
 	}
 }
 
+// BUILTINS
+
 func TestLenBuiltinFunction(t *testing.T) {
 	tests := []struct {
 		code     string
@@ -485,6 +499,38 @@ func TestLenBuiltinFunction(t *testing.T) {
 	for _, test := range tests {
 		evaluated := testEval(t, test.code)
 		testIntegerObject(t, evaluated, test.expected)
+	}
+}
+
+func TestHeadBuiltinFunction(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected interface{}
+	}{
+		{
+			`head([1, 2, 3])`,
+			1,
+		},
+		{
+			`head([true])`,
+			true,
+		},
+		{
+			`head([])`,
+			nil,
+		},
+	}
+
+	for _, test := range tests {
+		evaluated := testEval(t, test.code)
+		switch expectedValue := test.expected.(type) {
+		case int:
+			testIntegerObject(t, evaluated, expectedValue)
+		case bool:
+			testBooleanObject(t, evaluated, expectedValue)
+		case nil:
+			testNullObject(t, evaluated)
+		}
 	}
 }
 
