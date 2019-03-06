@@ -524,6 +524,10 @@ func TestOperatorPrecedence(t *testing.T) {
 			"!isTrue(1 > 2)",
 			"(!isTrue((1 > 2)))",
 		},
+		{
+			"1 + [1, 2, 3][0] - 2",
+			"((1 + ([1, 2, 3][0])) - 2)",
+		},
 	}
 
 	for _, test := range tests {
@@ -760,5 +764,61 @@ func TestCallExpressionNoArgs(t *testing.T) {
 	for index, expParam := range expectedParameters {
 		actualParam := callExp.Arguments[index]
 		testLiteralExpression(t, actualParam, expParam)
+	}
+}
+
+func testArrayLiteral(t *testing.T, actual ast.Expression, expected []int64) bool {
+	arr, ok := actual.(*ast.ArrayLiteral)
+	if !ok {
+		t.Errorf("Expression is not ArrayLiteral. Got %T(%+v)", actual, actual)
+		return false
+	}
+	if len(expected) != len(arr.Items) {
+		t.Errorf("ArrayLiteral expected to have %d elements. Got %d",
+			len(expected), len(arr.Items))
+		return false
+	}
+	for index, expected := range expected {
+		if !testIntegerLiteralExpression(t, arr.Items[index], expected) {
+			return false
+		}
+	}
+	return true
+}
+
+func TestArrayLiteralExpression(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected []int64
+	}{
+		{"[0, 1, 4]", []int64{0, 1, 4}},
+		{"[]", []int64{}},
+	}
+
+	for _, test := range tests {
+		program := testParser(t, test.code)
+		stmt := testExpressionStatement(t, program.Statements[0])
+		testArrayLiteral(t, stmt.Expression, test.expected)
+	}
+}
+
+func TestIndexExpressionParsing(t *testing.T) {
+	// TODO: Add more!
+	code := `[1, 2, 3][1]`
+	program := testParser(t, code)
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("expected ExpressionStatement. Got %T", program.Statements[0])
+	}
+	indexExp, ok := stmt.Expression.(*ast.IndexExpression)
+	if !ok {
+		t.Fatalf("expected IndexExpression. Got %T", stmt.Expression)
+	}
+	if indexExp.Container.String() != "[1, 2, 3]" {
+		t.Fatalf("expected IndexExpression.Container to be %s. Got %s",
+			"[1, 2, 3]", indexExp.Container.String())
+	}
+	if !testLiteralExpression(t, indexExp.Index, 1) {
+		t.Fatalf("expected IndexExpression.Index to be %s. Got %s", "1", indexExp.Index.String())
 	}
 }

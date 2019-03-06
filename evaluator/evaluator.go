@@ -263,6 +263,30 @@ func unwrapReturnValue(result object.Object) object.Object {
 	return result
 }
 
+func evalArrayIndexExpression(container *object.Array, indexExpression ast.Node, env *object.Environment) object.Object {
+	indexObj := Eval(indexExpression, env)
+	if indexObj.Type() != object.INT {
+		return newError("type error: %s cannot be used as index of %s",
+			indexObj.Type(), object.ARRAY)
+	}
+	index := indexObj.(*object.Integer)
+	indexValue := index.Value
+	if indexValue >= 0 && indexValue < int64(len(container.Items)) {
+		return container.Items[indexValue]
+	}
+	return object.NULL
+}
+
+func evalIndexExpression(node *ast.IndexExpression, env *object.Environment) object.Object {
+	container := Eval(node.Container, env)
+	switch obj := container.(type) {
+	case *object.Array:
+		return evalArrayIndexExpression(obj, node.Index, env)
+	default:
+		return newError("type error: %s cannot be used as index expression", container.Type())
+	}
+}
+
 func Eval(node ast.Node, env *object.Environment) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
@@ -323,6 +347,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 
 			return applyFunction(evalFunc, evalArgs)
 		}
+	case *ast.IndexExpression:
+		return evalIndexExpression(node, env)
 	case *ast.IfExpression:
 		return evalIfConditionalExpression(node, env)
 	case *ast.IntegerLiteral:
@@ -333,6 +359,12 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return object.NewFunction(node.Parameters, node.Body, env)
 	case *ast.StringLiteral:
 		return object.NewString(node.Value)
+	case *ast.ArrayLiteral:
+		evalItems := evalExpressions(node.Items, env)
+		if len(evalItems) == 1 && isError(evalItems[0]) {
+			return evalItems[0]
+		}
+		return object.NewArray(evalItems)
 	}
 
 	return object.NULL

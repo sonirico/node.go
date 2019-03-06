@@ -104,6 +104,38 @@ func testStringObject(t *testing.T, obj object.Object, expected string) bool {
 	return true
 }
 
+func testFunctionObject(t *testing.T, evaluated object.Object, arguments []string, body string) bool {
+	fn, ok := evaluated.(*object.Function)
+	if !ok {
+		t.Errorf("function is not an object.Function. Got %T(%+v)", evaluated, evaluated)
+		return false
+	}
+	if len(fn.Parameters) != len(arguments) {
+		t.Errorf("function expected to have %d params. Got %d", len(arguments), len(fn.Parameters))
+		return false
+	}
+	for index, argument := range arguments {
+		if fn.Parameters[index].String() != argument {
+			t.Errorf("parameter expected to be '%s'. Got '%s'", argument, fn.Parameters[index].String())
+			return false
+		}
+	}
+	if fn.Body.String() != body {
+		t.Errorf("function expected to have body equal to '%s'. Got '%s'",
+			body, fn.Body.String())
+		return false
+	}
+	return true
+}
+
+func testArrayObject(t *testing.T, evaluated object.Object, assertions func(array *object.Array)) {
+	arr, ok := evaluated.(*object.Array)
+	if !ok {
+		t.Fatalf("expected Array. Got %T(%+v)", evaluated, evaluated)
+	}
+	assertions(arr)
+}
+
 func TestEvalIntegerObject(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -326,7 +358,79 @@ func TestErrorHandling(t *testing.T) {
 		},
 		{
 			`len(1)`,
-			"Type mismatch: Expected STRING. Got INTEGER",
+			"type mismatch: Expected STRING or ARRAY. Got INTEGER",
+		},
+		{
+			`true[0]`,
+			"type error: BOOLEAN cannot be used as index expression",
+		},
+		{
+			`[1][true]`,
+			"type error: BOOLEAN cannot be used as index of ARRAY",
+		},
+		{
+			`head()`,
+			"type error: Expected 1 argument. Got 0",
+		},
+		{
+			`head([1, 2], 1)`,
+			"type error: Expected 1 argument. Got 2",
+		},
+		{
+			`head(true)`,
+			"type mismatch: Expected ARRAY. Got BOOLEAN",
+		},
+		{
+			`foot()`,
+			"type error: Expected 1 argument. Got 0",
+		},
+		{
+			`foot([1, 2], 1)`,
+			"type error: Expected 1 argument. Got 2",
+		},
+		{
+			`foot(true)`,
+			"type mismatch: Expected ARRAY. Got BOOLEAN",
+		},
+		{
+			`tail()`,
+			"type error: Expected 1 argument. Got 0",
+		},
+		{
+			`tail([1, 2, 3], false)`,
+			"type error: Expected 1 argument. Got 2",
+		},
+		{
+			`tail(false)`,
+			"type mismatch: Expected ARRAY. Got BOOLEAN",
+		},
+		{
+			`push()`,
+			"type error: Expected 2 arguments. Got 0",
+		},
+		{
+			`push([])`,
+			"type error: Expected 2 arguments. Got 1",
+		},
+		{
+			`push([], 3, 5)`,
+			"type error: Expected 2 arguments. Got 3",
+		},
+		{
+			`push(2, true)`,
+			"type mismatch: Expected ARRAY. Got INTEGER",
+		},
+		{
+			`pop()`,
+			"type error: Expected 1 argument. Got 0",
+		},
+		{
+			`pop(true)`,
+			"type mismatch: Expected ARRAY. Got BOOLEAN",
+		},
+		{
+			`pop([], 2)`,
+			"type error: Expected 1 argument. Got 2",
 		},
 	}
 	for _, test := range tests {
@@ -359,21 +463,9 @@ func TestLetStatements(t *testing.T) {
 func TestFunctionObject(t *testing.T) {
 	code := "fn (x) { x + 2;}"
 	evaluated := testEval(t, code)
-	evalFunc, ok := evaluated.(*object.Function)
-	if !ok {
-		t.Fatalf("evalFunc is not an object.Function. Got %T(%+v)", evaluated, evaluated)
-	}
-	if len(evalFunc.Parameters) != 1 {
-		t.Fatalf("function expected to have %d params. Got %d", 2, len(evalFunc.Parameters))
-	}
-	if evalFunc.Parameters[0].String() != "x" {
-		t.Fatalf("parameter expected to be '%s'. Got '%s'", "x", evalFunc.Parameters[0].String())
-	}
+	expectedParams := []string{"x"}
 	expectedBody := "{(x + 2)}"
-	if expectedBody != evalFunc.Body.String() {
-		t.Fatalf("function expected to have body equal to '%s'. Got '%s'",
-			expectedBody, evalFunc.Body.String())
-	}
+	testFunctionObject(t, evaluated, expectedParams, expectedBody)
 }
 
 func TestFunctionApplication(t *testing.T) {
@@ -441,6 +533,8 @@ func TestFunctionClosures(t *testing.T) {
 	}
 }
 
+// BUILTINS
+
 func TestLenBuiltinFunction(t *testing.T) {
 	tests := []struct {
 		code     string
@@ -449,10 +543,273 @@ func TestLenBuiltinFunction(t *testing.T) {
 		{`len(" hello   there ")`, 15},
 		{`len("")`, 0},
 		{`len(fn (x) { "I ve " + x + " eyes"} ("2"))`, 11},
+		{`len([])`, 0},
+		{`len([1])`, 1},
+		{`len([1, 2])`, 2},
 	}
 
 	for _, test := range tests {
 		evaluated := testEval(t, test.code)
 		testIntegerObject(t, evaluated, test.expected)
+	}
+}
+
+func TestHeadBuiltinFunction(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected interface{}
+	}{
+		{
+			`head([1, 2, 3])`,
+			1,
+		},
+		{
+			`head([true])`,
+			true,
+		},
+		{
+			`head([])`,
+			nil,
+		},
+	}
+
+	for _, test := range tests {
+		evaluated := testEval(t, test.code)
+		switch expectedValue := test.expected.(type) {
+		case int:
+			testIntegerObject(t, evaluated, expectedValue)
+		case bool:
+			testBooleanObject(t, evaluated, expectedValue)
+		case nil:
+			testNullObject(t, evaluated)
+		}
+	}
+}
+
+func TestFootBuiltinFunction(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected interface{}
+	}{
+		{
+			`foot([1, 2, 3])`,
+			3,
+		},
+		{
+			`foot([true])`,
+			true,
+		},
+		{
+			`foot([])`,
+			nil,
+		},
+	}
+
+	for _, test := range tests {
+		evaluated := testEval(t, test.code)
+		switch expectedValue := test.expected.(type) {
+		case int:
+			testIntegerObject(t, evaluated, expectedValue)
+		case bool:
+			testBooleanObject(t, evaluated, expectedValue)
+		case nil:
+			testNullObject(t, evaluated)
+		}
+	}
+}
+
+func TestTailBuiltinFunction(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected interface{}
+	}{
+		{
+			`tail([1, 2, 3])`,
+			[]int{2, 3},
+		},
+		{
+			`tail([true])`,
+			[]int{},
+		},
+		{
+			`tail([])`,
+			nil,
+		},
+	}
+
+	for _, test := range tests {
+		evaluated := testEval(t, test.code)
+		switch expectedValue := test.expected.(type) {
+		case []int:
+			array, ok := evaluated.(*object.Array)
+			if !ok {
+				t.Fatalf("expected array")
+			}
+			for index, expectedIntValue := range expectedValue {
+				testIntegerObject(t, array.Items[index], expectedIntValue)
+			}
+		case nil:
+			testNullObject(t, evaluated)
+		}
+	}
+}
+
+func TestPushBuiltinFunction(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected []int
+	}{
+		{
+			`push([1, 2, 3], 4)`,
+			[]int{1, 2, 3, 4},
+		},
+		{
+			`push([1], 2)`,
+			[]int{1, 2},
+		},
+		{
+			`push([], 1)`,
+			[]int{1},
+		},
+		{
+			`let arr = [1]; push(arr, 2); arr;`,
+			[]int{1},
+		},
+	}
+
+	for _, test := range tests {
+		evaluated := testEval(t, test.code)
+		array, ok := evaluated.(*object.Array)
+		if !ok {
+			t.Fatalf("expected object.Array. Got %T(%+v)", evaluated, evaluated)
+		}
+		for index, expectedIntValue := range test.expected {
+			testIntegerObject(t, array.Items[index], expectedIntValue)
+		}
+	}
+}
+
+func TestPopBuiltinFunction(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected interface{}
+	}{
+		{
+			`pop([1, 2, 3])`,
+			3,
+		},
+		{
+			`pop([1])`,
+			1,
+		},
+		{
+			`pop([])`,
+			nil,
+		},
+		{
+			`let arr = [1]; pop(arr); arr;`,
+			[]int{},
+		},
+	}
+
+	for _, test := range tests {
+		evaluated := testEval(t, test.code)
+		switch expected := test.expected.(type) {
+		case nil:
+			testNullObject(t, evaluated)
+		case int:
+			testIntegerObject(t, evaluated, expected)
+		case []int:
+			array, ok := evaluated.(*object.Array)
+			if !ok {
+				t.Fatalf("expected object.Array. Got %T(%+v)", evaluated, evaluated)
+			}
+			if len(expected) != len(array.Items) {
+				t.Fatalf("expected object.Array to have length of %d. Got %d",
+					len(expected), len(array.Items))
+			}
+			for index, expectedIntValue := range expected {
+				testIntegerObject(t, array.Items[index], expectedIntValue)
+			}
+		}
+	}
+}
+
+func TestArrayLiteralEvaluation(t *testing.T) {
+	tests := []struct {
+		code       string
+		assertions func(*object.Array)
+	}{
+		{
+			`[true, 1, "hey", fn(){}]`,
+			func(arr *object.Array) {
+				if len(arr.Items) != 4 {
+					t.Fatalf("expected Array to have %d items. Got %d", 4, len(arr.Items))
+				}
+				testBooleanObject(t, arr.Items[0], true)
+				testIntegerObject(t, arr.Items[1], 1)
+				testStringObject(t, arr.Items[2], "hey")
+				testFunctionObject(t, arr.Items[3], []string{}, "{}")
+			},
+		},
+		{
+			`[]`,
+			func(arr *object.Array) {},
+		},
+		{
+			`let f = fn(z){z * z}; [f(-2), fn(x, y){x + y}("a", "b")]`,
+			func(arr *object.Array) {
+				if len(arr.Items) != 2 {
+					t.Fatalf("expected Array to have %d items. Got %d", 4, len(arr.Items))
+				}
+				testIntegerObject(t, arr.Items[0], 4)
+				testStringObject(t, arr.Items[1], "ab")
+			},
+		},
+	}
+
+	for _, test := range tests {
+		evaluated := testEval(t, test.code)
+		testArrayObject(t, evaluated, test.assertions)
+	}
+}
+
+func TestIndexExpressionEvaluation(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected interface{}
+	}{
+		{
+			`[1, 2 * 3, fn(n){n - 1}(1)][2]`,
+			0,
+		},
+		{
+			`let array = [1, 2 * 3, fn(n){n - 1}(1)]; array[2]`,
+			0,
+		},
+		{
+			`let getArray = fn () {
+				return [1, 2 * 3, fn(n){n - 1}(1)]
+			};
+			getArray()[1];
+			`,
+			6,
+		},
+		{
+			"[1][1]",
+			nil,
+		},
+	}
+	for _, test := range tests {
+		evaluated := testEval(t, test.code)
+		switch exp := test.expected.(type) {
+		case nil:
+			testNullObject(t, evaluated)
+		case int:
+			if !testIntegerObject(t, evaluated, exp) {
+				t.Fatalf("expected IndexExpression to return %d. Got %s",
+					test.expected, evaluated.Type())
+			}
+		}
 	}
 }

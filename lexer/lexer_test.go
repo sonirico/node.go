@@ -17,6 +17,7 @@ func TestNextToken(t *testing.T) {
 		sum(1, 2)
 		""
 		"I am a teapot"
+		[1, 3, true]
 	`
 	expected := []struct {
 		expectedType    token.TokenType
@@ -86,6 +87,13 @@ func TestNextToken(t *testing.T) {
 		{token.RPAREN, ")"},
 		{token.STRING, ""},
 		{token.STRING, "I am a teapot"},
+		{token.LBRACKET, "["},
+		{token.INT, "1"},
+		{token.COMMA, ","},
+		{token.INT, "3"},
+		{token.COMMA, ","},
+		{token.TRUE, "true"},
+		{token.RBRACKET, "]"},
 		{token.EOF, ""},
 	}
 

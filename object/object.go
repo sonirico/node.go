@@ -16,4 +16,5 @@ const (
 	ERROR          = "ERROR"
 	FUNCTION       = "FUNCTION"
 	BFUNCTION      = "BUILTIN FUNCTION"
+	ARRAY          = "ARRAY"
 )
