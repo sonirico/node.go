@@ -420,6 +420,18 @@ func TestErrorHandling(t *testing.T) {
 			`push(2, true)`,
 			"type mismatch: Expected ARRAY. Got INTEGER",
 		},
+		{
+			`pop()`,
+			"type error: Expected 1 argument. Got 0",
+		},
+		{
+			`pop(true)`,
+			"type mismatch: Expected ARRAY. Got BOOLEAN",
+		},
+		{
+			`pop([], 2)`,
+			"type error: Expected 1 argument. Got 2",
+		},
 	}
 	for _, test := range tests {
 		evaluated := testEval(t, test.input)
@@ -673,6 +685,52 @@ func TestPushBuiltinFunction(t *testing.T) {
 		}
 		for index, expectedIntValue := range test.expected {
 			testIntegerObject(t, array.Items[index], expectedIntValue)
+		}
+	}
+}
+
+func TestPopBuiltinFunction(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected interface{}
+	}{
+		{
+			`pop([1, 2, 3])`,
+			3,
+		},
+		{
+			`pop([1])`,
+			1,
+		},
+		{
+			`pop([])`,
+			nil,
+		},
+		{
+			`let arr = [1]; pop(arr); arr;`,
+			[]int{},
+		},
+	}
+
+	for _, test := range tests {
+		evaluated := testEval(t, test.code)
+		switch expected := test.expected.(type) {
+		case nil:
+			testNullObject(t, evaluated)
+		case int:
+			testIntegerObject(t, evaluated, expected)
+		case []int:
+			array, ok := evaluated.(*object.Array)
+			if !ok {
+				t.Fatalf("expected object.Array. Got %T(%+v)", evaluated, evaluated)
+			}
+			if len(expected) != len(array.Items) {
+				t.Fatalf("expected object.Array to have length of %d. Got %d",
+					len(expected), len(array.Items))
+			}
+			for index, expectedIntValue := range expected {
+				testIntegerObject(t, array.Items[index], expectedIntValue)
+			}
 		}
 	}
 }

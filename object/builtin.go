@@ -30,6 +30,10 @@ var builtins = map[string]*Builtin{
 		Name: "push",
 		Fn:   PushArray,
 	},
+	"pop": {
+		Name: "pop",
+		Fn:   Pop,
+	},
 }
 
 func (b *Builtin) Type() Type {
@@ -129,4 +133,22 @@ func PushArray(arguments ...Object) Object {
 	copy(items, array.Items)
 	items = append(items, arguments[1])
 	return NewArray(items)
+}
+
+func Pop(arguments ...Object) Object {
+	if len(arguments) != 1 {
+		return NewError(fmt.Sprintf("type error: Expected 1 argument. Got %d",
+			len(arguments)))
+	}
+	array, ok := arguments[0].(*Array)
+	if !ok {
+		return NewError(fmt.Sprintf("type mismatch: Expected ARRAY. Got %s", arguments[0].Type()))
+	}
+	length := len(array.Items)
+	if length < 1 {
+		return NULL
+	}
+	result := array.Items[length-1]
+	array.Items = array.Items[0 : length-1]
+	return result
 }
