@@ -404,6 +404,22 @@ func TestErrorHandling(t *testing.T) {
 			`tail(false)`,
 			"type mismatch: Expected ARRAY. Got BOOLEAN",
 		},
+		{
+			`push()`,
+			"type error: Expected 2 arguments. Got 0",
+		},
+		{
+			`push([])`,
+			"type error: Expected 2 arguments. Got 1",
+		},
+		{
+			`push([], 3, 5)`,
+			"type error: Expected 2 arguments. Got 3",
+		},
+		{
+			`push(2, true)`,
+			"type mismatch: Expected ARRAY. Got INTEGER",
+		},
 	}
 	for _, test := range tests {
 		evaluated := testEval(t, test.input)
@@ -622,6 +638,41 @@ func TestTailBuiltinFunction(t *testing.T) {
 			}
 		case nil:
 			testNullObject(t, evaluated)
+		}
+	}
+}
+
+func TestPushBuiltinFunction(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected []int
+	}{
+		{
+			`push([1, 2, 3], 4)`,
+			[]int{1, 2, 3, 4},
+		},
+		{
+			`push([1], 2)`,
+			[]int{1, 2},
+		},
+		{
+			`push([], 1)`,
+			[]int{1},
+		},
+		{
+			`let arr = [1]; push(arr, 2); arr;`,
+			[]int{1},
+		},
+	}
+
+	for _, test := range tests {
+		evaluated := testEval(t, test.code)
+		array, ok := evaluated.(*object.Array)
+		if !ok {
+			t.Fatalf("expected object.Array. Got %T(%+v)", evaluated, evaluated)
+		}
+		for index, expectedIntValue := range test.expected {
+			testIntegerObject(t, array.Items[index], expectedIntValue)
 		}
 	}
 }
