@@ -22,6 +22,10 @@ var builtins = map[string]*Builtin{
 		Name: "foot",
 		Fn:   Foot,
 	},
+	"tail": {
+		Name: "tail",
+		Fn:   Tail,
+	},
 }
 
 func (b *Builtin) Type() Type {
@@ -83,6 +87,26 @@ func Foot(arguments ...Object) Object {
 			return NULL
 		}
 		return obj.Items[length-1]
+	}
+	return NewError(fmt.Sprintf("type mismatch: Expected ARRAY. Got %s", arguments[0].Type()))
+}
+
+// TAIL
+
+func Tail(arguments ...Object) Object {
+	if len(arguments) != 1 {
+		return NewError(fmt.Sprintf("type error: Expected 1 argument. Got %d",
+			len(arguments)))
+	}
+	switch obj := arguments[0].(type) {
+	case *Array:
+		length := len(obj.Items)
+		if length < 1 {
+			return NULL
+		}
+		items := make([]Object, length-1, length-1)
+		copy(items, obj.Items[1:length])
+		return NewArray(items)
 	}
 	return NewError(fmt.Sprintf("type mismatch: Expected ARRAY. Got %s", arguments[0].Type()))
 }

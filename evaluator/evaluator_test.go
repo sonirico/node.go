@@ -392,6 +392,18 @@ func TestErrorHandling(t *testing.T) {
 			`foot(true)`,
 			"type mismatch: Expected ARRAY. Got BOOLEAN",
 		},
+		{
+			`tail()`,
+			"type error: Expected 1 argument. Got 0",
+		},
+		{
+			`tail([1, 2, 3], false)`,
+			"type error: Expected 1 argument. Got 2",
+		},
+		{
+			`tail(false)`,
+			"type mismatch: Expected ARRAY. Got BOOLEAN",
+		},
 	}
 	for _, test := range tests {
 		evaluated := testEval(t, test.input)
@@ -572,6 +584,42 @@ func TestFootBuiltinFunction(t *testing.T) {
 			testIntegerObject(t, evaluated, expectedValue)
 		case bool:
 			testBooleanObject(t, evaluated, expectedValue)
+		case nil:
+			testNullObject(t, evaluated)
+		}
+	}
+}
+
+func TestTailBuiltinFunction(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected interface{}
+	}{
+		{
+			`tail([1, 2, 3])`,
+			[]int{2, 3},
+		},
+		{
+			`tail([true])`,
+			[]int{},
+		},
+		{
+			`tail([])`,
+			nil,
+		},
+	}
+
+	for _, test := range tests {
+		evaluated := testEval(t, test.code)
+		switch expectedValue := test.expected.(type) {
+		case []int:
+			array, ok := evaluated.(*object.Array)
+			if !ok {
+				t.Fatalf("expected array")
+			}
+			for index, expectedIntValue := range expectedValue {
+				testIntegerObject(t, array.Items[index], expectedIntValue)
+			}
 		case nil:
 			testNullObject(t, evaluated)
 		}
