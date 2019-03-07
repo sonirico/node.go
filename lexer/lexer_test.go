@@ -18,6 +18,7 @@ func TestNextToken(t *testing.T) {
 		""
 		"I am a teapot"
 		[1, 3, true]
+		{"key": 0}
 	`
 	expected := []struct {
 		expectedType    token.TokenType
@@ -94,6 +95,11 @@ func TestNextToken(t *testing.T) {
 		{token.COMMA, ","},
 		{token.TRUE, "true"},
 		{token.RBRACKET, "]"},
+		{token.LBRACE, "{"},
+		{token.STRING, "key"},
+		{token.COLON, ":"},
+		{token.INT, "0"},
+		{token.RBRACE, "}"},
 		{token.EOF, ""},
 	}
 

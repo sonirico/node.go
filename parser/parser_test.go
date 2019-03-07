@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func testParser(t *testing.T, code string) *ast.Program {
+func ParseTesting (t *testing.T, code string) *ast.Program {
 	lex := lexer.New(code)
 	par := New(lex)
 	program := par.ParseProgram()
@@ -395,7 +395,7 @@ func testStringLiteral(t *testing.T, exp ast.Expression, expected string) bool {
 
 func TestStringLiteralExpression(t *testing.T) {
 	input := `"I am a fork";1;`
-	program := testParser(t, input)
+	program := ParseTesting(t, input)
 	if len(program.Statements) < 1 {
 		t.Fatalf("Parse string got no statements, expected %d", 1)
 	}
@@ -796,7 +796,7 @@ func TestArrayLiteralExpression(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		program := testParser(t, test.code)
+		program := ParseTesting(t, test.code)
 		stmt := testExpressionStatement(t, program.Statements[0])
 		testArrayLiteral(t, stmt.Expression, test.expected)
 	}
@@ -805,7 +805,7 @@ func TestArrayLiteralExpression(t *testing.T) {
 func TestIndexExpressionParsing(t *testing.T) {
 	// TODO: Add more!
 	code := `[1, 2, 3][1]`
-	program := testParser(t, code)
+	program := ParseTesting(t, code)
 	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
 	if !ok {
 		t.Fatalf("expected ExpressionStatement. Got %T", program.Statements[0])
