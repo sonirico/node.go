@@ -322,7 +322,7 @@ func (sl *StringLiteral) TokenLiteral() string {
 	return sl.Token.Literal
 }
 func (sl *StringLiteral) String() string {
-	return fmt.Sprintf(`\"%s\"`, sl.Value)
+	return sl.Value
 }
 
 // Call expression

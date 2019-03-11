@@ -6,32 +6,16 @@ import (
 )
 
 func TestHashLiteralStringKeys(t *testing.T) {
-	payload := `{"key": 0}`
-	program := ParseTesting(t, payload)
-	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
-	if !ok {
-		t.Fatalf("stmt expected to be ExpressionStatement. Got %T(%+v)",
-			program.Statements[0], program.Statements[0])
-	}
-	hashLiteral, ok := stmt.Expression.(*ast.HashLiteral)
-	if !ok {
-		t.Fatalf("exp expected to be HashLiteral. Got %T(%+v)",
-			stmt.Expression, stmt.Expression)
-	}
-	if len(hashLiteral.Pairs) != 1 {
-		t.Fatalf("hashLiteral expected to have %d items. Got %d",
-			1, len(hashLiteral.Pairs))
-	}
-	tests := []struct{
-		code string
+	tests := []struct {
+		code     string
 		expected map[string]int64
 	}{
 		{
-			`{"key": 0, "hello": 3, "negative": -1}`,
+			`{"key": 0, "hello": 3, "negative": 1}`,
 			map[string]int64{
-				"key": 0,
-				"hello": 3,
-				"negative": -1,
+				"key":      0,
+				"hello":    3,
+				"negative": 1,
 			},
 		},
 	}
@@ -57,15 +41,32 @@ func TestHashLiteralStringKeys(t *testing.T) {
 			if !ok {
 				t.Fatalf("HashLiteral key is not StringLiteral'")
 			}
-			expected := test.expected[literal.String()]
+			stringL := literal.String()
+			expected := test.expected[stringL]
 			testIntegerLiteralExpression(t, v, expected)
 		}
 	}
 }
 
 func TestParseEmptyHashLiteralExpression(t *testing.T) {
-
+	payload := `{}`
+	program := ParseTesting(t, payload)
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt expected to be ExpressionStatement. Got %T(%+v)",
+			program.Statements[0], program.Statements[0])
+	}
+	hashLiteral, ok := stmt.Expression.(*ast.HashLiteral)
+	if !ok {
+		t.Fatalf("exp expected to be HashLiteral. Got %T(%+v)",
+			stmt.Expression, stmt.Expression)
+	}
+	if len(hashLiteral.Pairs) != 0 {
+		t.Fatalf("hashLiteral expected to have %d items. Got %d",
+			0, len(hashLiteral.Pairs))
+	}
 }
 
 func TestParseHashLiteralWithInfixExpressions(t *testing.T) {
+	// {"keys": 1 + 1}
 }

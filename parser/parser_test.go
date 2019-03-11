@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func ParseTesting (t *testing.T, code string) *ast.Program {
+func ParseTesting(t *testing.T, code string) *ast.Program {
 	lex := lexer.New(code)
 	par := New(lex)
 	program := par.ParseProgram()
