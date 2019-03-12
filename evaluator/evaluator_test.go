@@ -829,3 +829,34 @@ func TestStringHashKey(t *testing.T) {
 			s1.HashKey().Value, s2.HashKey().Value)
 	}
 }
+
+func TestIntegersHashKey(t *testing.T) {
+	s1 := object.NewInteger(189423879)
+	s2 := object.NewInteger(189423879)
+	if s1.HashKey().Value != s2.HashKey().Value {
+		t.Fatalf("Integer.HashKey differ: %d != %d",
+			s1.HashKey().Value, s2.HashKey().Value)
+	}
+
+	s1 = object.NewInteger(189423879)
+	s2 = object.NewInteger(289423879)
+	if s1.HashKey().Value == s2.HashKey().Value {
+		t.Fatalf("Integer.HashKey should differ: %d != %d",
+			s1.HashKey().Value, s2.HashKey().Value)
+	}
+}
+
+func TestBooleanHashKey(t *testing.T) {
+	s1 := object.NewBoolean(true)
+	s2 := object.NewBoolean(true)
+	if s1.HashKey().Value != s2.HashKey().Value {
+		t.Fatalf("Boolean.HashKey differ: %d != %d",
+			s1.HashKey().Value, s2.HashKey().Value)
+	}
+	s1 = object.NewBoolean(true)
+	s2 = object.NewBoolean(false)
+	if s1.HashKey().Value == s2.HashKey().Value {
+		t.Fatalf("Boolean.HashKey should differ: %d != %d",
+			s1.HashKey().Value, s2.HashKey().Value)
+	}
+}

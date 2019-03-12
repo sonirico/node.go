@@ -1,6 +1,9 @@
 package object
 
-import "hash/fnv"
+import (
+	"bytes"
+	"hash/fnv"
+)
 
 type Hashable interface {
 	HashKey() *HashKey
@@ -31,4 +34,33 @@ func (s *String) HashKey() *HashKey {
 	hash := fnv.New64()
 	_, _ = hash.Write([]byte(s.Value))
 	return &HashKey{Type: s.Type(), Value: hash.Sum64()}
+}
+
+type HashPair struct {
+	Key   Object
+	Value Object
+}
+
+type Hash struct {
+	Pairs map[HashKey]HashPair
+}
+
+func (h *Hash) Type() Type {
+	return HASH
+}
+
+func (h *Hash) Inspect() string {
+	var out bytes.Buffer
+
+	out.WriteString("{")
+
+	for _, pair := range h.Pairs {
+		out.WriteString(pair.Key.Inspect())
+		out.WriteString(": ")
+		out.WriteString(pair.Value.Inspect())
+	}
+
+	out.WriteString("}")
+
+	return out.String()
 }
