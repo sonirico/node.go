@@ -67,6 +67,41 @@ func TestParseEmptyHashLiteralExpression(t *testing.T) {
 	}
 }
 
-func TestParseHashLiteralWithInfixExpressions(t *testing.T) {
-	// {"keys": 1 + 1}
+func TestParseHashLiteralWithInfixAndPrefixExpressions(t *testing.T) {
+	payload := `{"sum": 1 + 1, "sub": 2 - 1, "bool": !false}`
+	tests := map[string]func(ast.Expression){
+		"sum": func(exp ast.Expression) {
+			testInfixExpression(t, exp, 1, "+", 1)
+		},
+		"sub": func(exp ast.Expression) {
+			testInfixExpression(t, exp, 2, "-", 1)
+		},
+		"bool": func(exp ast.Expression) {
+			testPrefixExpression(t, exp, false, "!")
+		},
+	}
+
+	program := ParseTesting(t, payload)
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt expected to be ExpressionStatement. Got %T(%+v)",
+			program.Statements[0], program.Statements[0])
+	}
+	hashLiteral, ok := stmt.Expression.(*ast.HashLiteral)
+	if !ok {
+		t.Fatalf("exp expected to be HashLiteral. Got %T(%+v)",
+			stmt.Expression, stmt.Expression)
+	}
+	if len(hashLiteral.Pairs) != 3 {
+		t.Fatalf("hashLiteral expected to have %d items. Got %d",
+			0, len(hashLiteral.Pairs))
+	}
+
+	for k, v := range hashLiteral.Pairs {
+		function, ok := tests[k.String()]
+		if !ok {
+			t.Fatalf("HashLiteral has an unexpected key %s", k.String())
+		}
+		function(v)
+	}
 }

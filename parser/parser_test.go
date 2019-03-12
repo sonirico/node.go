@@ -406,6 +406,18 @@ func TestStringLiteralExpression(t *testing.T) {
 	testStringLiteral(t, stmt.Expression, "I am a fork")
 }
 
+func testPrefixExpression(t *testing.T, expression ast.Expression, expected interface{}, operator string) bool {
+	prefixExpression, ok := expression.(*ast.PrefixExpression)
+	if !ok {
+		t.Fatalf("prefixExpression is not *ast.PrefixExpression. Got '%q' instead.", expression)
+	}
+	if prefixExpression.Operator != operator {
+		t.Fatalf("Expected PrefixExpression.Operator to be '%s'. Got '%s' instead",
+			operator, prefixExpression.Operator)
+	}
+	return testLiteralExpression(t, prefixExpression.Right, expected)
+}
+
 func TestPrefixExpression(t *testing.T) {
 	tests := []struct {
 		input            string
@@ -434,15 +446,7 @@ func TestPrefixExpression(t *testing.T) {
 		if !ok {
 			t.Fatalf("stmt is not *ast.ExpressionStatement. Got '%q' instead.", stmt)
 		}
-		prefixExpression, ok := stmt.Expression.(*ast.PrefixExpression)
-		if !ok {
-			t.Fatalf("prefixExpression is not *ast.PrefixExpression. Got '%q' instead.", stmt)
-		}
-		if prefixExpression.Operator != test.expectedOperator {
-			t.Fatalf("Expected PrefixExpression.Operator to be '%s'. Got '%s' instead",
-				test.expectedOperator, prefixExpression.Operator)
-		}
-		testLiteralExpression(t, prefixExpression.Right, test.expectedValue)
+		testPrefixExpression(t, stmt.Expression, test.expectedValue, test.expectedOperator)
 	}
 }
 
