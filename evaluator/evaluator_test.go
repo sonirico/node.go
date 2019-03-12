@@ -813,3 +813,19 @@ func TestIndexExpressionEvaluation(t *testing.T) {
 		}
 	}
 }
+
+func TestStringHashKey(t *testing.T) {
+	s1 := object.NewString("hola que tal amigo")
+	s2 := object.NewString("hola que tal amigo")
+	if s1.HashKey().Value != s2.HashKey().Value {
+		t.Fatalf("StringLiterarl.HashKey differ: %d != %d",
+			s1.HashKey().Value, s2.HashKey().Value)
+	}
+
+	s1 = object.NewString("vamos a subirle el IVA a los chuches tambien!")
+	s2 = object.NewString("tenemos que construir maquinas...")
+	if s1.HashKey().Value == s2.HashKey().Value {
+		t.Fatalf("StringLiterarl.HashKey should differ: %d != %d",
+			s1.HashKey().Value, s2.HashKey().Value)
+	}
+}
