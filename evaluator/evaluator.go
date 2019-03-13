@@ -277,6 +277,30 @@ func evalArrayIndexExpression(container *object.Array, indexExpression ast.Node,
 	return object.NULL
 }
 
+func evalHashLiteralExpression(astPairs map[ast.Expression]ast.Expression, env *object.Environment) object.Object {
+	pairs := make(map[object.HashKey]object.HashPair)
+	hash := &object.Hash{Pairs: pairs}
+
+	for keyNode, valueNode := range astPairs {
+		evalKey := Eval(keyNode, env)
+		if isError(evalKey) {
+			return evalKey
+		}
+		key, ok := evalKey.(object.Hashable)
+		if !ok {
+			return newError("Got unhashable type as hash key: %s", evalKey.Type())
+		}
+		evalValue := Eval(valueNode, env)
+		if isError(evalValue) {
+			return evalValue
+		}
+		hashed := key.HashKey()
+		pairs[hashed] = object.HashPair{Key: evalKey, Value: evalValue}
+	}
+
+	return hash
+}
+
 func evalIndexExpression(node *ast.IndexExpression, env *object.Environment) object.Object {
 	container := Eval(node.Container, env)
 	switch obj := container.(type) {
@@ -365,6 +389,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return evalItems[0]
 		}
 		return object.NewArray(evalItems)
+	case *ast.HashLiteral:
+		return evalHashLiteralExpression(node.Pairs, env)
 	}
 
 	return object.NULL

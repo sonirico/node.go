@@ -2,11 +2,13 @@ package object
 
 import (
 	"bytes"
+	"fmt"
 	"hash/fnv"
+	"strings"
 )
 
 type Hashable interface {
-	HashKey() *HashKey
+	HashKey() HashKey
 }
 
 type HashKey struct {
@@ -14,11 +16,11 @@ type HashKey struct {
 	Value uint64
 }
 
-func (i *Integer) HashKey() *HashKey {
-	return &HashKey{Type: i.Type(), Value: uint64(i.Value)}
+func (i *Integer) HashKey() HashKey {
+	return HashKey{Type: i.Type(), Value: uint64(i.Value)}
 }
 
-func (b *Boolean) HashKey() *HashKey {
+func (b *Boolean) HashKey() HashKey {
 	var value uint64
 
 	if b.Value {
@@ -27,13 +29,13 @@ func (b *Boolean) HashKey() *HashKey {
 		value = 0
 	}
 
-	return &HashKey{Type: b.Type(), Value: value}
+	return HashKey{Type: b.Type(), Value: value}
 }
 
-func (s *String) HashKey() *HashKey {
+func (s *String) HashKey() HashKey {
 	hash := fnv.New64()
 	_, _ = hash.Write([]byte(s.Value))
-	return &HashKey{Type: s.Type(), Value: hash.Sum64()}
+	return HashKey{Type: s.Type(), Value: hash.Sum64()}
 }
 
 type HashPair struct {
@@ -51,15 +53,15 @@ func (h *Hash) Type() Type {
 
 func (h *Hash) Inspect() string {
 	var out bytes.Buffer
-
-	out.WriteString("{")
+	var pairsString []string
 
 	for _, pair := range h.Pairs {
-		out.WriteString(pair.Key.Inspect())
-		out.WriteString(": ")
-		out.WriteString(pair.Value.Inspect())
+		pairsString = append(pairsString, fmt.Sprintf("%s: %s",
+			pair.Key.Inspect(), pair.Value.Inspect()))
 	}
 
+	out.WriteString("{")
+	out.WriteString(strings.Join(pairsString, ", "))
 	out.WriteString("}")
 
 	return out.String()
