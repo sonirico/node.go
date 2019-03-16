@@ -448,6 +448,22 @@ func TestErrorHandling(t *testing.T) {
 			`let dict = {[]: 1}`,
 			"value error: unhashable type as hash key: ARRAY",
 		},
+		{
+			`{}[{}]`,
+			"value error: unhashable type as hash key: HASH",
+		},
+		{
+			`{}[[]]`,
+			"value error: unhashable type as hash key: ARRAY",
+		},
+		{
+			`let null; {}[null]`,
+			"value error: unhashable type as hash key: NULL",
+		},
+		{
+			`{}[fn(){}]`,
+			"value error: unhashable type as hash key: FUNCTION",
+		},
 	}
 	for _, test := range tests {
 		evaluated := testEval(t, test.input)
@@ -929,6 +945,32 @@ func TestHashEvaluation(t *testing.T) {
 		if actualValue.Inspect() != expectedValue.Inspect() {
 			t.Fatalf("Hash value was expected to be %s. Got %s",
 				actualValue.Inspect(), expectedValue.Inspect())
+		}
+	}
+}
+
+func TestHashIndexExpressionEvaluation(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected object.Object
+	}{
+		{`{0: 1}[0]`, object.NewInteger(1)},
+		{`{"two": 2}["one"]`, object.NULL},
+		{`{"two": 2}["two"]`, object.NewInteger(2)},
+		{`{false: false}[false]`, object.FALSE},
+		{`{"sum": fn(a, b){a + b}}["sum"](1, 2)`, object.NewInteger(3)},
+		{`let regKey = "registry"; {regKey: {}}[regKey]`, object.NewHash()},
+	}
+
+	for _, test := range tests {
+		evaluated := testEval(t, test.code)
+		if test.expected.Type() != evaluated.Type() {
+			t.Fatalf("Expected object.Type to be %s. Got %s",
+				test.expected.Type(), evaluated.Type())
+		}
+		if test.expected.Inspect() != evaluated.Inspect() {
+			t.Fatalf("Expected object.Inspect to be %s. Got %s",
+				test.expected.Inspect(), evaluated.Inspect())
 		}
 	}
 }
