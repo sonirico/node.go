@@ -61,7 +61,7 @@ func TestIfExpression_String(t *testing.T) {
 						},
 						Value: true,
 					},
-					Consequence: BlockStatement{
+					Consequence: &BlockStatement{
 						Token: token.Token{
 							Type:    token.LBRACE,
 							Literal: "{",
@@ -116,7 +116,7 @@ func TestFunctionLiteral_String(t *testing.T) {
 						Literal: "fn",
 					},
 					Parameters: []*Identifier{},
-					Body: BlockStatement{
+					Body: &BlockStatement{
 						Token: token.Token{
 							Type:    token.LBRACE,
 							Literal: "{",

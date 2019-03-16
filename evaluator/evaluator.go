@@ -202,7 +202,7 @@ func evalIfConditionalExpression(ifExpression *ast.IfExpression, env *object.Env
 		return evaluatedCondition
 	}
 	if isTruthy(evaluatedCondition) {
-		return Eval(&ifExpression.Consequence, env)
+		return Eval(ifExpression.Consequence, env)
 	}
 	if ifExpression.Alternative != nil {
 		return Eval(ifExpression.Alternative, env)
