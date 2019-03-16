@@ -17,4 +17,5 @@ const (
 	FUNCTION       = "FUNCTION"
 	BFUNCTION      = "BUILTIN FUNCTION"
 	ARRAY          = "ARRAY"
+	HASH           = "HASH"
 )

@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func testParser(t *testing.T, code string) *ast.Program {
+func ParseTesting(t *testing.T, code string) *ast.Program {
 	lex := lexer.New(code)
 	par := New(lex)
 	program := par.ParseProgram()
@@ -395,7 +395,7 @@ func testStringLiteral(t *testing.T, exp ast.Expression, expected string) bool {
 
 func TestStringLiteralExpression(t *testing.T) {
 	input := `"I am a fork";1;`
-	program := testParser(t, input)
+	program := ParseTesting(t, input)
 	if len(program.Statements) < 1 {
 		t.Fatalf("Parse string got no statements, expected %d", 1)
 	}
@@ -404,6 +404,18 @@ func TestStringLiteralExpression(t *testing.T) {
 		t.Fatalf("stmt is not *ast.ExpressionStatement. Got '%q' instead.", stmt)
 	}
 	testStringLiteral(t, stmt.Expression, "I am a fork")
+}
+
+func testPrefixExpression(t *testing.T, expression ast.Expression, expected interface{}, operator string) bool {
+	prefixExpression, ok := expression.(*ast.PrefixExpression)
+	if !ok {
+		t.Fatalf("prefixExpression is not *ast.PrefixExpression. Got '%q' instead.", expression)
+	}
+	if prefixExpression.Operator != operator {
+		t.Fatalf("Expected PrefixExpression.Operator to be '%s'. Got '%s' instead",
+			operator, prefixExpression.Operator)
+	}
+	return testLiteralExpression(t, prefixExpression.Right, expected)
 }
 
 func TestPrefixExpression(t *testing.T) {
@@ -434,15 +446,7 @@ func TestPrefixExpression(t *testing.T) {
 		if !ok {
 			t.Fatalf("stmt is not *ast.ExpressionStatement. Got '%q' instead.", stmt)
 		}
-		prefixExpression, ok := stmt.Expression.(*ast.PrefixExpression)
-		if !ok {
-			t.Fatalf("prefixExpression is not *ast.PrefixExpression. Got '%q' instead.", stmt)
-		}
-		if prefixExpression.Operator != test.expectedOperator {
-			t.Fatalf("Expected PrefixExpression.Operator to be '%s'. Got '%s' instead",
-				test.expectedOperator, prefixExpression.Operator)
-		}
-		testLiteralExpression(t, prefixExpression.Right, test.expectedValue)
+		testPrefixExpression(t, stmt.Expression, test.expectedValue, test.expectedOperator)
 	}
 }
 
@@ -796,7 +800,7 @@ func TestArrayLiteralExpression(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		program := testParser(t, test.code)
+		program := ParseTesting(t, test.code)
 		stmt := testExpressionStatement(t, program.Statements[0])
 		testArrayLiteral(t, stmt.Expression, test.expected)
 	}
@@ -805,7 +809,7 @@ func TestArrayLiteralExpression(t *testing.T) {
 func TestIndexExpressionParsing(t *testing.T) {
 	// TODO: Add more!
 	code := `[1, 2, 3][1]`
-	program := testParser(t, code)
+	program := ParseTesting(t, code)
 	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
 	if !ok {
 		t.Fatalf("expected ExpressionStatement. Got %T", program.Statements[0])

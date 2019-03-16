@@ -358,7 +358,7 @@ func TestErrorHandling(t *testing.T) {
 		},
 		{
 			`len(1)`,
-			"type mismatch: Expected STRING or ARRAY. Got INTEGER",
+			"type mismatch: Expected STRING, ARRAY or HASH. Got INTEGER",
 		},
 		{
 			`true[0]`,
@@ -431,6 +431,38 @@ func TestErrorHandling(t *testing.T) {
 		{
 			`pop([], 2)`,
 			"type error: Expected 1 argument. Got 2",
+		},
+		{
+			`let dict = {fn(){}: 1}`,
+			"value error: unhashable type as hash key: FUNCTION",
+		},
+		{
+			`let dict = {{}: 1}`,
+			"value error: unhashable type as hash key: HASH",
+		},
+		{
+			`let null; let dict = {null: 1}`,
+			"value error: unhashable type as hash key: NULL",
+		},
+		{
+			`let dict = {[]: 1}`,
+			"value error: unhashable type as hash key: ARRAY",
+		},
+		{
+			`{}[{}]`,
+			"value error: unhashable type as hash key: HASH",
+		},
+		{
+			`{}[[]]`,
+			"value error: unhashable type as hash key: ARRAY",
+		},
+		{
+			`let null; {}[null]`,
+			"value error: unhashable type as hash key: NULL",
+		},
+		{
+			`{}[fn(){}]`,
+			"value error: unhashable type as hash key: FUNCTION",
 		},
 	}
 	for _, test := range tests {
@@ -546,6 +578,10 @@ func TestLenBuiltinFunction(t *testing.T) {
 		{`len([])`, 0},
 		{`len([1])`, 1},
 		{`len([1, 2])`, 2},
+		// HASHES
+		{`len({})`, 0},
+		{`len({"k": 1})`, 1},
+		{`len({"color": "red", "size": "M"})`, 2},
 	}
 
 	for _, test := range tests {
@@ -810,6 +846,135 @@ func TestIndexExpressionEvaluation(t *testing.T) {
 				t.Fatalf("expected IndexExpression to return %d. Got %s",
 					test.expected, evaluated.Type())
 			}
+		}
+	}
+}
+
+func TestStringHashKey(t *testing.T) {
+	s1 := object.NewString("hola que tal amigo")
+	s2 := object.NewString("hola que tal amigo")
+	if s1.HashKey().Value != s2.HashKey().Value {
+		t.Fatalf("StringLiterarl.HashKey differ: %d != %d",
+			s1.HashKey().Value, s2.HashKey().Value)
+	}
+
+	s1 = object.NewString("vamos a subirle el IVA a los chuches tambien!")
+	s2 = object.NewString("tenemos que construir maquinas...")
+	if s1.HashKey().Value == s2.HashKey().Value {
+		t.Fatalf("StringLiterarl.HashKey should differ: %d != %d",
+			s1.HashKey().Value, s2.HashKey().Value)
+	}
+}
+
+func TestIntegersHashKey(t *testing.T) {
+	s1 := object.NewInteger(189423879)
+	s2 := object.NewInteger(189423879)
+	if s1.HashKey().Value != s2.HashKey().Value {
+		t.Fatalf("Integer.HashKey differ: %d != %d",
+			s1.HashKey().Value, s2.HashKey().Value)
+	}
+
+	s1 = object.NewInteger(189423879)
+	s2 = object.NewInteger(289423879)
+	if s1.HashKey().Value == s2.HashKey().Value {
+		t.Fatalf("Integer.HashKey should differ: %d != %d",
+			s1.HashKey().Value, s2.HashKey().Value)
+	}
+}
+
+func TestBooleanHashKey(t *testing.T) {
+	s1 := object.NewBoolean(true)
+	s2 := object.NewBoolean(true)
+	if s1.HashKey().Value != s2.HashKey().Value {
+		t.Fatalf("Boolean.HashKey differ: %d != %d",
+			s1.HashKey().Value, s2.HashKey().Value)
+	}
+	s1 = object.NewBoolean(true)
+	s2 = object.NewBoolean(false)
+	if s1.HashKey().Value == s2.HashKey().Value {
+		t.Fatalf("Boolean.HashKey should differ: %d != %d",
+			s1.HashKey().Value, s2.HashKey().Value)
+	}
+}
+
+func TestHashEvaluation(t *testing.T) {
+	payload := `let k = 6; {
+		!false: -0,
+		!!!true: 2 / 2,
+		(4 / 2) - (-3 / 3): 2 > 1,
+		"for" + "th": -(-3),
+		fn(){"fifth"}(): fn(x){x}(4),
+		k: 5
+	}`
+	expected := map[object.HashKey]object.HashPair{
+		object.TRUE.HashKey():               {Key: object.TRUE, Value: object.NewInteger(0)},
+		object.FALSE.HashKey():              {Key: object.FALSE, Value: object.NewInteger(1)},
+		object.NewInteger(3).HashKey():      {Key: object.NewInteger(3), Value: object.TRUE},
+		object.NewString("forth").HashKey(): {Key: object.NewString("forth"), Value: object.NewInteger(3)},
+		object.NewString("fifth").HashKey(): {Key: object.NewString("fifth"), Value: object.NewInteger(4)},
+		object.NewInteger(6).HashKey():      {Key: object.NewInteger(6), Value: object.NewInteger(5)},
+	}
+	evaluated := testEval(t, payload)
+	hash, ok := evaluated.(*object.Hash)
+	if !ok {
+		t.Fatalf("hash evaluation. expected object to be %s. Got %s",
+			object.HASH, evaluated.Type())
+	}
+	if len(expected) != len(hash.Pairs) {
+		t.Fatalf("Hash got a wrong number of pairs. Expected %d. Got %d",
+			len(expected), len(hash.Pairs))
+	}
+	for expectedHashKey, expectedHashPair := range expected {
+		actualHashPair, ok := hash.Pairs[expectedHashKey]
+		if !ok {
+			t.Fatalf("Hash did not contain HashKey %d for Key %s",
+				expectedHashKey.Value, expectedHashPair.Key.Inspect())
+		}
+		actualKey := actualHashPair.Key
+		actualValue := actualHashPair.Value
+		expectedKey := expectedHashPair.Key
+		expectedValue := expectedHashPair.Value
+		if actualKey.Type() != expectedKey.Type() {
+			t.Fatalf("Hash contains an unexpected hash key %s. Expected %s",
+				actualKey.Type(), expectedKey.Type())
+		}
+		if actualKey.Inspect() != expectedKey.Inspect() {
+			t.Fatalf("Hash key was expected to be %s. Got %s",
+				actualKey.Inspect(), expectedKey.Inspect())
+		}
+		if actualValue.Type() != expectedValue.Type() {
+			t.Fatalf("Hash contains an unexpected hash value %s. Expected %s",
+				actualValue.Type(), expectedValue.Type())
+		}
+		if actualValue.Inspect() != expectedValue.Inspect() {
+			t.Fatalf("Hash value was expected to be %s. Got %s",
+				actualValue.Inspect(), expectedValue.Inspect())
+		}
+	}
+}
+
+func TestHashIndexExpressionEvaluation(t *testing.T) {
+	tests := []struct {
+		code     string
+		expected object.Object
+	}{
+		{`{0: 1}[0]`, object.NewInteger(1)},
+		{`{"two": 2}["one"]`, object.NULL},
+		{`{"two": 2}["two"]`, object.NewInteger(2)},
+		{`{false: false}[false]`, object.FALSE},
+		{`{"sum": fn(a, b){a + b}}["sum"](1, 2)`, object.NewInteger(3)},
+		{`let regKey = "registry"; {regKey: {}}[regKey]`, object.NewHash()},
+	}
+
+	for _, test := range tests {
+		evaluated := testEval(t, test.code)
+		if test.expected.Type() != evaluated.Type() {
+			t.Fatalf("Expected object.Type to be %s. Got %s",
+				test.expected.Type(), evaluated.Type())
+		}
+		if test.expected.Inspect() != evaluated.Inspect() {
+			t.Fatalf("Expected object.Inspect to be %s. Got %s",
+				test.expected.Inspect(), evaluated.Inspect())
 		}
 	}
 }
