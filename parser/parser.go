@@ -431,13 +431,13 @@ func (p *Parser) parseHashLiteralExpression() ast.Expression {
 	hashLiteral := &ast.HashLiteral{Token: p.currentToken}
 	hashLiteral.Pairs = make(map[ast.Expression]ast.Expression)
 
-	p.nextToken()
-
-	if p.currentTokenIs(token.RBRACE) {
+	if p.peekTokenIs(token.RBRACE) {
+		p.nextToken()
 		return hashLiteral
 	}
 
 	for !p.peekTokenIs(token.RBRACE) {
+		p.nextToken()
 		key := p.parseExpression(LOWEST)
 		if !p.expectPeekToken(token.COLON) {
 			return nil
@@ -446,7 +446,6 @@ func (p *Parser) parseHashLiteralExpression() ast.Expression {
 		value := p.parseExpression(LOWEST)
 		hashLiteral.Pairs[key] = value
 		if p.peekTokenIs(token.COMMA) {
-			p.nextToken()
 			p.nextToken()
 		}
 	}

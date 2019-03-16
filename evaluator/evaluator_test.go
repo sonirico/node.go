@@ -432,6 +432,22 @@ func TestErrorHandling(t *testing.T) {
 			`pop([], 2)`,
 			"type error: Expected 1 argument. Got 2",
 		},
+		{
+			`let dict = {fn(){}: 1}`,
+			"value error: unhashable type as hash key: FUNCTION",
+		},
+		{
+			`let dict = {{}: 1}`,
+			"value error: unhashable type as hash key: HASH",
+		},
+		{
+			`let null; let dict = {null: 1}`,
+			"value error: unhashable type as hash key: NULL",
+		},
+		{
+			`let dict = {[]: 1}`,
+			"value error: unhashable type as hash key: ARRAY",
+		},
 	}
 	for _, test := range tests {
 		evaluated := testEval(t, test.input)
@@ -858,5 +874,61 @@ func TestBooleanHashKey(t *testing.T) {
 	if s1.HashKey().Value == s2.HashKey().Value {
 		t.Fatalf("Boolean.HashKey should differ: %d != %d",
 			s1.HashKey().Value, s2.HashKey().Value)
+	}
+}
+
+func TestHashEvaluation(t *testing.T) {
+	payload := `let k = 6; {
+		!false: -0,
+		!!!true: 2 / 2,
+		(4 / 2) - (-3 / 3): 2 > 1,
+		"for" + "th": -(-3),
+		fn(){"fifth"}(): fn(x){x}(4),
+		k: 5
+	}`
+	expected := map[object.HashKey]object.HashPair{
+		object.TRUE.HashKey():               {Key: object.TRUE, Value: object.NewInteger(0)},
+		object.FALSE.HashKey():              {Key: object.FALSE, Value: object.NewInteger(1)},
+		object.NewInteger(3).HashKey():      {Key: object.NewInteger(3), Value: object.TRUE},
+		object.NewString("forth").HashKey(): {Key: object.NewString("forth"), Value: object.NewInteger(3)},
+		object.NewString("fifth").HashKey(): {Key: object.NewString("fifth"), Value: object.NewInteger(4)},
+		object.NewInteger(6).HashKey():      {Key: object.NewInteger(6), Value: object.NewInteger(5)},
+	}
+	evaluated := testEval(t, payload)
+	hash, ok := evaluated.(*object.Hash)
+	if !ok {
+		t.Fatalf("hash evaluation. expected object to be %s. Got %s",
+			object.HASH, evaluated.Type())
+	}
+	if len(expected) != len(hash.Pairs) {
+		t.Fatalf("Hash got a wrong number of pairs. Expected %d. Got %d",
+			len(expected), len(hash.Pairs))
+	}
+	for expectedHashKey, expectedHashPair := range expected {
+		actualHashPair, ok := hash.Pairs[expectedHashKey]
+		if !ok {
+			t.Fatalf("Hash did not contain HashKey %d for Key %s",
+				expectedHashKey.Value, expectedHashPair.Key.Inspect())
+		}
+		actualKey := actualHashPair.Key
+		actualValue := actualHashPair.Value
+		expectedKey := expectedHashPair.Key
+		expectedValue := expectedHashPair.Value
+		if actualKey.Type() != expectedKey.Type() {
+			t.Fatalf("Hash contains an unexpected hash key %s. Expected %s",
+				actualKey.Type(), expectedKey.Type())
+		}
+		if actualKey.Inspect() != expectedKey.Inspect() {
+			t.Fatalf("Hash key was expected to be %s. Got %s",
+				actualKey.Inspect(), expectedKey.Inspect())
+		}
+		if actualValue.Type() != expectedValue.Type() {
+			t.Fatalf("Hash contains an unexpected hash value %s. Expected %s",
+				actualValue.Type(), expectedValue.Type())
+		}
+		if actualValue.Inspect() != expectedValue.Inspect() {
+			t.Fatalf("Hash value was expected to be %s. Got %s",
+				actualValue.Inspect(), expectedValue.Inspect())
+		}
 	}
 }

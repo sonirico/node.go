@@ -288,7 +288,7 @@ func evalHashLiteralExpression(astPairs map[ast.Expression]ast.Expression, env *
 		}
 		key, ok := evalKey.(object.Hashable)
 		if !ok {
-			return newError("Got unhashable type as hash key: %s", evalKey.Type())
+			return newError("value error: unhashable type as hash key: %s", evalKey.Type())
 		}
 		evalValue := Eval(valueNode, env)
 		if isError(evalValue) {
