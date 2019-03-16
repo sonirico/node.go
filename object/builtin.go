@@ -60,8 +60,10 @@ func Len(arguments ...Object) Object {
 		return NewInteger(int64(len(obj.Value)))
 	case *Array:
 		return NewInteger(int64(len(obj.Items)))
+	case *Hash:
+		return NewInteger(int64(len(obj.Pairs)))
 	}
-	return NewError(fmt.Sprintf("type mismatch: Expected STRING or ARRAY. Got %s", arguments[0].Type()))
+	return NewError(fmt.Sprintf("type mismatch: Expected STRING, ARRAY or HASH. Got %s", arguments[0].Type()))
 }
 
 // HEAD

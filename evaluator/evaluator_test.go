@@ -358,7 +358,7 @@ func TestErrorHandling(t *testing.T) {
 		},
 		{
 			`len(1)`,
-			"type mismatch: Expected STRING or ARRAY. Got INTEGER",
+			"type mismatch: Expected STRING, ARRAY or HASH. Got INTEGER",
 		},
 		{
 			`true[0]`,
@@ -578,6 +578,10 @@ func TestLenBuiltinFunction(t *testing.T) {
 		{`len([])`, 0},
 		{`len([1])`, 1},
 		{`len([1, 2])`, 2},
+		// HASHES
+		{`len({})`, 0},
+		{`len({"k": 1})`, 1},
+		{`len({"color": "red", "size": "M"})`, 2},
 	}
 
 	for _, test := range tests {
