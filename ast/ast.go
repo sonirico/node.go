@@ -197,7 +197,7 @@ func (i *Identifier) String() string {
 type IfExpression struct {
 	Token       token.Token
 	Condition   Expression
-	Consequence BlockStatement
+	Consequence *BlockStatement
 	Alternative *BlockStatement
 }
 
@@ -254,7 +254,7 @@ func (ie *IndexExpression) String() string {
 type FunctionLiteral struct {
 	Token      token.Token
 	Parameters []*Identifier
-	Body       BlockStatement
+	Body       *BlockStatement
 }
 
 func (fl *FunctionLiteral) expressionNode() {}

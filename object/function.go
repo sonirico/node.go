@@ -8,11 +8,11 @@ import (
 
 type Function struct {
 	Parameters []*ast.Identifier
-	Body       ast.BlockStatement
+	Body       *ast.BlockStatement
 	Env        *Environment
 }
 
-func NewFunction(params []*ast.Identifier, body ast.BlockStatement, env *Environment) *Function {
+func NewFunction(params []*ast.Identifier, body *ast.BlockStatement, env *Environment) *Function {
 	return &Function{Parameters: params, Body: body, Env: env}
 }
 

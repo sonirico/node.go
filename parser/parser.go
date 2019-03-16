@@ -317,8 +317,8 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 	return exp
 }
 
-func (p *Parser) parseBlockStatement() ast.BlockStatement {
-	bs := ast.BlockStatement{Token: p.currentToken}
+func (p *Parser) parseBlockStatement() *ast.BlockStatement {
+	bs := &ast.BlockStatement{Token: p.currentToken}
 	bs.Statements = []ast.Statement{}
 
 	p.nextToken()
@@ -362,10 +362,7 @@ func (p *Parser) parseIfExpression() ast.Expression {
 			return nil
 		}
 
-		stmt := p.parseBlockStatement()
-		ifExp.Alternative = &stmt
-
-		p.nextToken()
+		ifExp.Alternative = p.parseBlockStatement()
 	}
 
 	return ifExp

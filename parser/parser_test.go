@@ -599,7 +599,7 @@ func TestIfExpression(t *testing.T) {
 
 func TestIfWithElseExpression(t *testing.T) {
 	code := `
-		if (true) {z} else {1}'
+		if (true) {z} else {1}
 	`
 	lex := lexer.New(code)
 	par := New(lex)
