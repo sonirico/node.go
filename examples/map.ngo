@@ -1,0 +1,10 @@
+let map = fn (arr, f) {
+
+  let iter = fn(arr, acc) {
+     if (len(arr) < 1) { return acc }
+     return iter(tail(arr), push(acc, f(head(arr))))
+  }
+
+  return iter(arr, [])
+};
+

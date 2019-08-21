@@ -1,0 +1,8 @@
+ let reduce = fn (arr, f, initial) {
+  let iter = fn(arr, acc) {
+     if (len(arr) < 1) { return acc }
+     iter(tail(arr), f(head(arr), acc))
+  }
+
+  iter(arr, initial)
+};
